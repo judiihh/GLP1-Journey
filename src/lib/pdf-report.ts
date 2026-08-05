@@ -22,7 +22,7 @@ export async function generateMedicalSummary(data: AppData): Promise<void> {
   let y = 20;
 
   // Header
-  doc.setFillColor(232, 180, 180);
+  doc.setFillColor(235, 177, 203);
   doc.roundedRect(14, 10, pageWidth - 28, 28, 3, 3, "F");
   doc.setTextColor(80, 60, 60);
   doc.setFontSize(18);
@@ -135,7 +135,7 @@ export async function generateMedicalSummary(data: AppData): Promise<void> {
         head: [["Date", "Symptom", "Severity"]],
         body: effectRows.slice(0, 20),
         theme: "striped",
-        headStyles: { fillColor: [232, 180, 180] },
+        headStyles: { fillColor: [235, 177, 203] },
         margin: { left: 14, right: 14 },
       });
       y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;

@@ -90,7 +90,7 @@ export function ProgressBar({
           )}
         </div>
       )}
-      <div className="h-2.5 bg-lavender-50 rounded-full overflow-hidden">
+      <div className="h-2.5 bg-rose-50/80 rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-700 ease-out", color)}
           style={{ width: `${pct}%` }}

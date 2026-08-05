@@ -10,14 +10,14 @@ const config: Config = {
     extend: {
       colors: {
         rose: {
-          50: "#fdf6f6",
-          100: "#f9ecec",
-          200: "#f2d4d4",
-          300: "#e8b4b4",
-          400: "#d48989",
-          500: "#c06b6b",
-          600: "#a85555",
-          700: "#8f4444",
+          50: "#fdf8fb",
+          100: "#faeef5",
+          200: "#f3d9e8",
+          300: "#ebb1cb",
+          400: "#e098bc",
+          500: "#d483ad",
+          600: "#bc6b95",
+          700: "#a0557c",
         },
         lavender: {
           50: "#f8f6fc",
@@ -61,8 +61,9 @@ const config: Config = {
         "3xl": "1.5rem",
       },
       boxShadow: {
-        soft: "0 2px 15px -3px rgba(139, 111, 196, 0.08), 0 4px 6px -4px rgba(139, 111, 196, 0.06)",
-        card: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(139, 111, 196, 0.06)",
+        soft: "0 2px 15px -3px rgba(139, 111, 196, 0.08), 0 4px 6px -4px rgba(235, 177, 203, 0.08)",
+        card: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(139, 111, 196, 0.05), 0 1px 0 rgba(235, 177, 203, 0.14)",
+        rose: "0 2px 12px -2px rgba(235, 177, 203, 0.22), 0 4px 8px -4px rgba(139, 111, 196, 0.08)",
       },
     },
   },

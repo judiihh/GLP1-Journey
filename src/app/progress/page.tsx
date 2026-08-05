@@ -144,7 +144,7 @@ export default function ProgressPage() {
               value={goalProgress}
               max={100}
               size={120}
-              color="#d48989"
+              color="#ebb1cb"
               label={`${goalProgress}%`}
               sublabel="to goal"
             />

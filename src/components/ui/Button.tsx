@@ -18,12 +18,12 @@ export function Button({
 }: ButtonProps) {
   const variants = {
     primary:
-      "bg-gradient-to-r from-lavender-400 to-lavender-500 text-white hover:from-lavender-500 hover:to-lavender-500 shadow-soft",
+      "bg-gradient-to-r from-lavender-400 via-lavender-400 to-rose-400 text-white hover:from-lavender-500 hover:via-lavender-500 hover:to-rose-500 shadow-soft",
     secondary:
-      "bg-rose-100 text-rose-600 hover:bg-rose-200",
-    ghost: "text-gray-600 hover:bg-gray-100",
+      "bg-rose-100 text-rose-500 hover:bg-rose-200 ring-1 ring-rose-200/60",
+    ghost: "text-gray-600 hover:bg-rose-50 hover:text-rose-500",
     outline:
-      "border-2 border-lavender-200 text-lavender-600 hover:bg-lavender-50",
+      "border-2 border-lavender-200 text-lavender-600 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-500",
   };
 
   const sizes = {

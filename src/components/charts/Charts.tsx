@@ -16,7 +16,7 @@ import {
 
 const chartColors = {
   lavender: "#a892d4",
-  rose: "#d48989",
+  rose: "#ebb1cb",
   turquoise: "#4db8aa",
   sage: "#9fb89f",
 };

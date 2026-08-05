@@ -170,7 +170,7 @@ export default function SymptomsPage() {
             <TrendChart
               data={nauseaData}
               dataKey="severity"
-              color="#d48989"
+              color="#ebb1cb"
               type="bar"
             />
           </Card>

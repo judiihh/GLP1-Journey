@@ -24,7 +24,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <AppProvider>
-        <div className="flex min-h-screen min-h-[100dvh] bg-gradient-to-br from-cream-50 via-white to-lavender-50/20 overflow-x-hidden">
+        <div className="flex min-h-screen min-h-[100dvh] bg-gradient-to-br from-cream-50 via-rose-50/25 to-lavender-50/35 overflow-x-hidden">
           <Sidebar />
           <div className="flex flex-col flex-1 min-w-0 w-full">
             <MobileHeader onMenuOpen={() => setMenuOpen(true)} />

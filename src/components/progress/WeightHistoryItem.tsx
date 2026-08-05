@@ -114,7 +114,7 @@ export function WeightHistoryItem({
   }
 
   return (
-    <div className="p-3 rounded-xl bg-lavender-50/50 group">
+    <div className="p-3 rounded-xl bg-gradient-to-r from-lavender-50/60 to-rose-50/50 group border border-rose-100/30">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">

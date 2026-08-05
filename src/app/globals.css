@@ -15,7 +15,7 @@
   }
 
   ::selection {
-    @apply bg-lavender-200 text-lavender-500;
+    @apply bg-rose-100 text-lavender-600;
   }
 }
 
@@ -54,8 +54,8 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-lavender-200 rounded-full;
+  @apply bg-gradient-to-b from-lavender-200 to-rose-200 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-lavender-300;
+  @apply from-lavender-300 to-rose-300;
 }

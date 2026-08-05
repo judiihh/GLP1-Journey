@@ -85,7 +85,10 @@ function NavLinks({
               active ? ui.activeNav : ui.navIdle
             )}
           >
-            <item.icon size={mobile ? 20 : 18} />
+            <item.icon
+              size={mobile ? 20 : 18}
+              className={cn("shrink-0", active && ui.iconAccent)}
+            />
             {item.label}
           </Link>
         );
@@ -98,7 +101,7 @@ export function Sidebar() {
   useReminders();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white/60 backdrop-blur-md border-r border-lavender-100/50 sticky top-0 h-screen overflow-y-auto p-6">
+    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white/60 backdrop-blur-md border-r border-lavender-100/50 lg:border-r-rose-100/40 sticky top-0 h-screen overflow-y-auto p-6">
       <div className="mb-8">
         <Brand />
       </div>
@@ -112,7 +115,7 @@ export function Sidebar() {
 
 export function MobileHeader({ onMenuOpen }: { onMenuOpen: () => void }) {
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-lavender-100/80 safe-area-top">
+    <header className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-rose-100/60 safe-area-top">
       <div className="flex items-center gap-3 px-4 h-14 max-w-full">
         <button
           type="button"
@@ -196,7 +199,7 @@ export function MobileMenu({
           <NavLinks onNavigate={onClose} mobile />
         </div>
 
-        <div className="shrink-0 p-4 border-t border-lavender-100 bg-lavender-50/30">
+        <div className="shrink-0 p-4 border-t border-rose-100/80 bg-gradient-to-b from-lavender-50/40 to-rose-50/50">
           <SidebarProfile embedded />
         </div>
       </aside>
@@ -219,6 +222,7 @@ export function PageHeader({
         <h1 className="font-display text-2xl md:text-3xl font-bold text-gray-800 break-words">
           {title}
         </h1>
+        <div className={cn(ui.titleUnderline, "mt-2 mb-1")} />
         {subtitle && (
           <p className="text-gray-500 mt-1 text-sm md:text-base">{subtitle}</p>
         )}

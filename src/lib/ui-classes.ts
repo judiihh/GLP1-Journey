@@ -1,16 +1,20 @@
-/** Shared classes for selected / active UI states (lavender primary) */
+/** Shared classes — lavender & turquoise primary, rose as warm accent detail */
 export const ui = {
   activeNav:
-    "bg-lavender-100 text-lavender-600 shadow-soft",
+    "bg-rose-100 text-rose-500 ring-1 ring-rose-200/60 border-l-[3px] border-rose-400",
   navIdle:
-    "text-gray-600 hover:bg-lavender-50 hover:text-lavender-500",
-  activeMobileNav: "text-lavender-600",
+    "text-gray-600 border-l-[3px] border-transparent hover:bg-rose-50/70 hover:text-rose-500 hover:border-rose-200",
+  activeMobileNav: "text-rose-500",
   selectableActive:
-    "border-lavender-400 bg-lavender-50 text-lavender-800 font-medium",
+    "border-rose-300 bg-lavender-50 text-lavender-800 font-medium ring-1 ring-rose-100",
   selectableIdle:
-    "border-gray-100 hover:border-lavender-200",
+    "border-gray-100 hover:border-rose-200 hover:bg-rose-50/50",
   activeCard:
-    "bg-lavender-100 shadow-soft ring-1 ring-lavender-200",
+    "bg-rose-100 shadow-soft ring-1 ring-rose-200/60",
   progressActive: "bg-lavender-400",
-  linkAccent: "text-lavender-500 hover:text-lavender-600",
+  progressTrack: "bg-rose-50/80",
+  linkAccent: "text-rose-400 hover:text-lavender-600",
+  iconAccent: "text-rose-500",
+  titleUnderline:
+    "h-0.5 w-10 bg-gradient-to-r from-rose-300 via-rose-200 to-lavender-300 rounded-full",
 } as const;
