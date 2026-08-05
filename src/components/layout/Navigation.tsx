@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useReminders } from "@/hooks/useReminders";
+import { SidebarProfile } from "@/components/layout/SidebarProfile";
 
 const navItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -69,13 +70,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-lavender-100">
-        <p className="text-xs text-gray-400 text-center leading-relaxed">
-          You're doing great. 💜
-          <br />
-          One day at a time.
-        </p>
-      </div>
+      <SidebarProfile />
     </aside>
   );
 }
