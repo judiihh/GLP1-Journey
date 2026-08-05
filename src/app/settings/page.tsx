@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import { useApp } from "@/hooks/useAppData";
+import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
-import { clearAllData } from "@/lib/storage";
+import { createClient } from "@/lib/supabase/client";
+import { testConnection } from "@/lib/supabase/data";
 import { requestNotificationPermission } from "@/hooks/useReminders";
 import { MEDICATIONS, DAYS_OF_WEEK } from "@/lib/constants";
 import type { GLP1Medication } from "@/lib/types";
-import { Bell, User, Target, Trash2, Save } from "lucide-react";
+import { Bell, Trash2, Save, LogOut, Database } from "lucide-react";
 
 export default function SettingsPage() {
-  const { data, setProfile, setReminders } = useApp();
+  const { data, setProfile, setReminders, clearAllData, usingSupabase } = useApp();
+  const { signOut, user } = useAuth();
   const { profile, reminders } = data;
 
   const [name, setName] = useState(profile?.name ?? "");
@@ -47,13 +50,15 @@ export default function SettingsPage() {
     String(reminders.daysBefore)
   );
   const [saved, setSaved] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
 
   if (!profile) return null;
 
   const med = MEDICATIONS.find((m) => m.id === medication)!;
 
-  const handleSave = () => {
-    setProfile({
+  const handleSave = async () => {
+    await setProfile({
       ...profile,
       name,
       medication,
@@ -67,7 +72,7 @@ export default function SettingsPage() {
       waterGoal: parseInt(waterGoal),
       goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
     });
-    setReminders({
+    await setReminders({
       enabled: reminderEnabled,
       daysBefore: parseInt(reminderDays),
       time: injectionTime,
@@ -83,15 +88,35 @@ export default function SettingsPage() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (
       confirm(
-        "Are you sure? This will delete all your data and restart onboarding."
+        "Are you sure? This will delete all your tracking data and restart onboarding."
       )
     ) {
-      clearAllData();
+      await clearAllData();
       window.location.reload();
     }
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setConnectionStatus(null);
+    try {
+      const result = await testConnection(createClient());
+      setConnectionStatus(result.message);
+    } catch (err) {
+      setConnectionStatus(
+        err instanceof Error ? err.message : "Connection test failed"
+      );
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    window.location.href = "/login";
   };
 
   return (
@@ -233,21 +258,51 @@ export default function SettingsPage() {
 
         {/* Data management */}
         <Card>
-          <CardHeader title="Data" subtitle="Manage your stored information" />
+          <CardHeader title="Account & data" subtitle="Cloud sync and account actions" />
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-lavender-50 text-sm text-gray-600">
-              <p>
-                All data is stored locally on your device. Nothing is sent to a
-                server — your health information stays private.
-              </p>
+              {usingSupabase ? (
+                <>
+                  <p>Signed in as <strong>{user?.email}</strong></p>
+                  <p className="mt-2">
+                    Your data is stored securely in Supabase. Row Level Security
+                    ensures only you can access your records.
+                  </p>
+                </>
+              ) : (
+                <p>
+                  Supabase is not configured. Data is stored locally in your browser
+                  until you add your environment variables.
+                </p>
+              )}
             </div>
+            {usingSupabase && (
+              <Button
+                variant="outline"
+                onClick={handleTestConnection}
+                loading={testingConnection}
+                className="w-full"
+              >
+                <Database className="w-4 h-4" /> Test Supabase connection
+              </Button>
+            )}
+            {connectionStatus && (
+              <p className="text-sm text-gray-600 bg-white/60 p-3 rounded-xl">
+                {connectionStatus}
+              </p>
+            )}
             <Button
               variant="secondary"
               onClick={handleReset}
               className="w-full text-rose-600"
             >
-              <Trash2 className="w-4 h-4" /> Reset all data
+              <Trash2 className="w-4 h-4" /> Reset all tracking data
             </Button>
+            {usingSupabase && (
+              <Button variant="ghost" onClick={handleSignOut} className="w-full">
+                <LogOut className="w-4 h-4" /> Sign out
+              </Button>
+            )}
           </div>
         </Card>
       </div>

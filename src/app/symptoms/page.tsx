@@ -34,7 +34,7 @@ export default function SymptomsPage() {
     setEffects((prev) => ({ ...prev, [type]: severity }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const activeEffects = Object.entries(effects)
       .filter(([, severity]) => severity >= 1)
@@ -43,7 +43,7 @@ export default function SymptomsPage() {
         severity: severity as Severity,
       }));
 
-    logSideEffect({
+    await logSideEffect({
       id: existing?.id ?? uuidv4(),
       date: todayISO(),
       effects: activeEffects,

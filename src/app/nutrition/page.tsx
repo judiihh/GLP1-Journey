@@ -26,9 +26,9 @@ export default function NutritionPage() {
 
   if (!profile) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    logNutrition({
+    await logNutrition({
       id: existing?.id ?? uuidv4(),
       date: todayISO(),
       calories: parseInt(calories) || 0,

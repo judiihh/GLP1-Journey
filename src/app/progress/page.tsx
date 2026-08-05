@@ -29,10 +29,10 @@ export default function ProgressPage() {
   const progress = getWeightProgress(weights);
   const unit = weights[0]?.unit ?? profile.goalWeightUnit;
 
-  const handleWeightSubmit = (e: React.FormEvent) => {
+  const handleWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!weight) return;
-    logWeight({
+    await logWeight({
       id: uuidv4(),
       date: weightDate,
       weight: parseFloat(weight),
@@ -45,9 +45,9 @@ export default function ProgressPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleMeasureSubmit = (e: React.FormEvent) => {
+  const handleMeasureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    logMeasurement({
+    await logMeasurement({
       id: uuidv4(),
       date: measureDate,
       waist: waist ? parseFloat(waist) : undefined,

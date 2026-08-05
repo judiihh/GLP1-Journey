@@ -1,76 +1,309 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { AppData, ReminderSettings, UserProfile } from "@/lib/types";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  deleteAllUserData,
+  fetchAppData,
+  insertInjection,
+  insertMeasurement,
+  insertWeight,
+  upsertNutrition,
+  upsertProfile,
+  upsertReminders,
+  upsertSideEffect,
+} from "@/lib/supabase/data";
 import {
   loadData,
-  saveData,
-  updateProfile as storeUpdateProfile,
-  addInjection as storeAddInjection,
-  addNutrition as storeAddNutrition,
-  addWeight as storeAddWeight,
-  addMeasurement as storeAddMeasurement,
-  addSideEffect as storeAddSideEffect,
-  updateReminders as storeUpdateReminders,
+  addInjection as localAddInjection,
+  addMeasurement as localAddMeasurement,
+  addNutrition as localAddNutrition,
+  addSideEffect as localAddSideEffect,
+  addWeight as localAddWeight,
+  updateProfile as localUpdateProfile,
+  updateReminders as localUpdateReminders,
+  clearAllData as localClearAllData,
 } from "@/lib/storage";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AppContextValue {
   data: AppData;
-  refresh: () => void;
-  setProfile: (profile: UserProfile) => void;
-  logInjection: (injection: AppData["injections"][0]) => void;
-  logNutrition: (log: AppData["nutrition"][0]) => void;
-  logWeight: (log: AppData["weights"][0]) => void;
-  logMeasurement: (log: AppData["measurements"][0]) => void;
-  logSideEffect: (log: AppData["sideEffects"][0]) => void;
-  setReminders: (reminders: ReminderSettings) => void;
+  refresh: () => Promise<void>;
+  setProfile: (profile: UserProfile) => Promise<void>;
+  logInjection: (injection: AppData["injections"][0]) => Promise<void>;
+  logNutrition: (log: AppData["nutrition"][0]) => Promise<void>;
+  logWeight: (log: AppData["weights"][0]) => Promise<void>;
+  logMeasurement: (log: AppData["measurements"][0]) => Promise<void>;
+  logSideEffect: (log: AppData["sideEffects"][0]) => Promise<void>;
+  setReminders: (reminders: ReminderSettings) => Promise<void>;
+  clearAllData: () => Promise<void>;
   isLoaded: boolean;
+  isSaving: boolean;
+  error: string | null;
+  usingSupabase: boolean;
 }
+
+const emptyData: AppData = {
+  profile: null,
+  injections: [],
+  nutrition: [],
+  weights: [],
+  measurements: [],
+  sideEffects: [],
+  reminders: { enabled: true, daysBefore: 1, time: "09:00" },
+};
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<AppData | null>(null);
+  const { user } = useAuth();
+  const [data, setData] = useState<AppData>(emptyData);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const usingSupabase = isSupabaseConfigured();
+  const supabase = useMemo(
+    () => (usingSupabase ? createClient() : null),
+    [usingSupabase]
+  );
 
-  const refresh = useCallback(() => {
-    setData(loadData());
-  }, []);
+  const refresh = useCallback(async () => {
+    setError(null);
+    if (usingSupabase && supabase && user) {
+      try {
+        const appData = await fetchAppData(supabase, user.id);
+        setData(appData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      }
+    } else if (!usingSupabase) {
+      setData(loadData());
+    }
+    setIsLoaded(true);
+  }, [usingSupabase, supabase, user]);
 
   useEffect(() => {
-    setData(loadData());
-    setIsLoaded(true);
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  const setProfile = useCallback((profile: UserProfile) => {
-    setData(storeUpdateProfile(profile));
-  }, []);
+  const setProfile = useCallback(
+    async (profile: UserProfile) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await upsertProfile(supabase, {
+            ...profile,
+            id: user.id,
+          });
+          setData((prev) => ({ ...prev, profile: saved }));
+        } else {
+          setData(localUpdateProfile(profile));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save profile");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const logInjection = useCallback((injection: AppData["injections"][0]) => {
-    setData(storeAddInjection(injection));
-  }, []);
+  const logInjection = useCallback(
+    async (injection: AppData["injections"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await insertInjection(supabase, user.id, injection);
+          let profileUpdate: UserProfile | null = null;
+          setData((prev) => {
+            if (prevNeedsDosageUpdate(injection, prev.profile) && prev.profile) {
+              profileUpdate = {
+                ...prev.profile,
+                currentDosage: injection.dosage,
+              };
+            }
+            return {
+              ...prev,
+              injections: [saved, ...prev.injections],
+              profile: profileUpdate ?? prev.profile,
+            };
+          });
+          if (profileUpdate) {
+            await upsertProfile(supabase, profileUpdate);
+          }
+        } else {
+          setData(localAddInjection(injection));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to log injection");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const logNutrition = useCallback((log: AppData["nutrition"][0]) => {
-    setData(storeAddNutrition(log));
-  }, []);
+  const logNutrition = useCallback(
+    async (log: AppData["nutrition"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await upsertNutrition(supabase, user.id, log);
+          setData((prev) => {
+            const idx = prev.nutrition.findIndex((n) => n.date === saved.date);
+            const nutrition =
+              idx >= 0
+                ? prev.nutrition.map((n, i) => (i === idx ? saved : n))
+                : [saved, ...prev.nutrition];
+            return { ...prev, nutrition };
+          });
+        } else {
+          setData(localAddNutrition(log));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to log nutrition");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const logWeight = useCallback((log: AppData["weights"][0]) => {
-    setData(storeAddWeight(log));
-  }, []);
+  const logWeight = useCallback(
+    async (log: AppData["weights"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await insertWeight(supabase, user.id, log);
+          setData((prev) => ({
+            ...prev,
+            weights: [saved, ...prev.weights],
+          }));
+        } else {
+          setData(localAddWeight(log));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to log weight");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const logMeasurement = useCallback((log: AppData["measurements"][0]) => {
-    setData(storeAddMeasurement(log));
-  }, []);
+  const logMeasurement = useCallback(
+    async (log: AppData["measurements"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await insertMeasurement(supabase, user.id, log);
+          setData((prev) => ({
+            ...prev,
+            measurements: [saved, ...prev.measurements],
+          }));
+        } else {
+          setData(localAddMeasurement(log));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to log measurement"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const logSideEffect = useCallback((log: AppData["sideEffects"][0]) => {
-    setData(storeAddSideEffect(log));
-  }, []);
+  const logSideEffect = useCallback(
+    async (log: AppData["sideEffects"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await upsertSideEffect(supabase, user.id, log);
+          setData((prev) => {
+            const idx = prev.sideEffects.findIndex((s) => s.date === saved.date);
+            const sideEffects =
+              idx >= 0
+                ? prev.sideEffects.map((s, i) => (i === idx ? saved : s))
+                : [saved, ...prev.sideEffects];
+            return { ...prev, sideEffects };
+          });
+        } else {
+          setData(localAddSideEffect(log));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to log side effects"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  const setReminders = useCallback((reminders: ReminderSettings) => {
-    setData(storeUpdateReminders(reminders));
-  }, []);
+  const setReminders = useCallback(
+    async (reminders: ReminderSettings) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await upsertReminders(supabase, user.id, reminders);
+          setData((prev) => ({ ...prev, reminders: saved }));
+        } else {
+          setData(localUpdateReminders(reminders));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save reminders");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
 
-  if (!data) {
+  const clearAllData = useCallback(async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      if (usingSupabase && supabase && user) {
+        await deleteAllUserData(supabase, user.id);
+        await refresh();
+      } else {
+        localClearAllData();
+        setData(loadData());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to clear data");
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [usingSupabase, supabase, user, refresh]);
+
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream-50">
         <div className="animate-pulse text-lavender-400 font-display text-lg">
@@ -92,11 +325,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         logMeasurement,
         logSideEffect,
         setReminders,
+        clearAllData,
         isLoaded,
+        isSaving,
+        error,
+        usingSupabase,
       }}
     >
       {children}
     </AppContext.Provider>
+  );
+}
+
+function prevNeedsDosageUpdate(
+  injection: AppData["injections"][0],
+  profile: UserProfile | null
+) {
+  return (
+    profile !== null &&
+    (injection.dosageChanged || injection.dosage !== profile.currentDosage)
   );
 }
 

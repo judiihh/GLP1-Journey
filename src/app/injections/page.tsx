@@ -21,7 +21,7 @@ import { todayISO } from "@/lib/utils";
 import { Syringe, MapPin, History, CheckCircle2 } from "lucide-react";
 
 export default function InjectionsPage() {
-  const { data, logInjection, setProfile } = useApp();
+  const { data, logInjection } = useApp();
   const { profile, injections } = data;
   const [showForm, setShowForm] = useState(false);
   const [date, setDate] = useState(todayISO());
@@ -43,12 +43,12 @@ export default function InjectionsPage() {
   const siteStatus = getSiteRotationStatus(injections);
   const daysUntil = getDaysUntilInjection(profile, injections);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newDosage = parseFloat(dosage);
     const changed = newDosage !== profile.currentDosage;
 
-    logInjection({
+    await logInjection({
       id: uuidv4(),
       date,
       time,
@@ -60,10 +60,6 @@ export default function InjectionsPage() {
       dosageChanged: changed || dosageChanged,
       previousDosage: changed ? profile.currentDosage : undefined,
     });
-
-    if (changed) {
-      setProfile({ ...profile, currentDosage: newDosage });
-    }
 
     setSaved(true);
     setTimeout(() => {

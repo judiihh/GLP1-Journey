@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { useApp } from "@/hooks/useAppData";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -12,6 +12,7 @@ import { HeartPulse, ChevronRight, Sparkles } from "lucide-react";
 
 export function Onboarding() {
   const { setProfile } = useApp();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [medication, setMedication] = useState<GLP1Medication>("ozempic");
@@ -27,9 +28,9 @@ export function Onboarding() {
 
   const med = MEDICATIONS.find((m) => m.id === medication)!;
 
-  const handleComplete = () => {
-    setProfile({
-      id: uuidv4(),
+  const handleComplete = async () => {
+    await setProfile({
+      id: user?.id ?? crypto.randomUUID(),
       name: name || "Friend",
       medication,
       currentDosage: parseFloat(dosage),
