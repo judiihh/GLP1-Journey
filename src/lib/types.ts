@@ -7,6 +7,7 @@ export type GLP1Medication =
   | "saxenda"
   | "victoza"
   | "rybelsus"
+  | "retatrutide"
   | "other";
 
 export type InjectionSite =

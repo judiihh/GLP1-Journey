@@ -73,6 +73,14 @@ export const MEDICATIONS: {
     frequency: "Daily",
   },
   {
+    id: "retatrutide",
+    name: "Retatrutide",
+    brand: "Retatrutide",
+    defaultUnit: "mg",
+    commonDosages: [1, 2, 4, 8, 12],
+    frequency: "Weekly · Investigational",
+  },
+  {
     id: "other",
     name: "Other GLP-1",
     brand: "Custom",
