@@ -1,14 +1,17 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AppProvider } from "@/hooks/useAppData";
-import { Sidebar, MobileNav } from "@/components/layout/Navigation";
+import { Sidebar, MobileHeader, MobileMenu } from "@/components/layout/Navigation";
 import { AppShell } from "@/components/layout/AppShell";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   if (isLoginPage) {
     return (
@@ -21,12 +24,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <AppProvider>
-        <div className="flex min-h-screen bg-gradient-to-br from-cream-50 via-white to-lavender-50/20">
+        <div className="flex min-h-screen min-h-[100dvh] bg-gradient-to-br from-cream-50 via-white to-lavender-50/20 overflow-x-hidden">
           <Sidebar />
-          <main className="flex-1 pb-20 lg:pb-0">
-            <AppShell>{children}</AppShell>
-          </main>
-          <MobileNav />
+          <div className="flex flex-col flex-1 min-w-0 w-full">
+            <MobileHeader onMenuOpen={() => setMenuOpen(true)} />
+            <main className="flex-1 min-w-0 overflow-x-hidden">
+              <AppShell>{children}</AppShell>
+            </main>
+          </div>
+          <MobileMenu open={menuOpen} onClose={closeMenu} />
         </div>
       </AppProvider>
     </AuthProvider>

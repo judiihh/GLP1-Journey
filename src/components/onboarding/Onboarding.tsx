@@ -115,7 +115,7 @@ export function Onboarding() {
               setDosage(String(m.commonDosages[0]));
             }}
             className={cn(
-              "p-3 rounded-xl border-2 text-left transition-all",
+              "p-3 sm:p-2.5 rounded-xl border-2 text-left transition-all min-h-[44px] touch-manipulation",
               medication === m.id ? ui.selectableActive : ui.selectableIdle
             )}
           >
@@ -216,8 +216,8 @@ export function Onboarding() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30">
-      <Card className="w-full max-w-lg">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30 overflow-x-hidden">
+      <Card className="w-full max-w-lg min-w-0">
         <div className="flex gap-1.5 mb-8">
           {steps.map((_, i) => (
             <div

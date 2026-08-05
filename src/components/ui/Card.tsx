@@ -10,7 +10,7 @@ export function Card({ children, className, onClick }: CardProps) {
   return (
     <div
       className={cn(
-        "bg-white/80 backdrop-blur-sm rounded-2xl shadow-card border border-white/60 p-5",
+        "bg-white/80 backdrop-blur-sm rounded-2xl shadow-card border border-white/60 p-4 sm:p-5",
         onClick && "cursor-pointer hover:shadow-soft transition-shadow",
         className
       )}
@@ -31,12 +31,12 @@ export function CardHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between mb-4">
-      <div>
+    <div className="flex items-start justify-between gap-3 mb-4 flex-col sm:flex-row sm:items-start">
+      <div className="min-w-0">
         <h3 className="font-display font-semibold text-gray-800 text-lg">{title}</h3>
         {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

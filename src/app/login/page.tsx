@@ -18,8 +18,8 @@ export default function LoginPage() {
 
   if (!isSupabaseConfigured()) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30">
-        <Card className="w-full max-w-md text-center p-8">
+      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30 overflow-x-hidden">
+        <Card className="w-full max-w-md min-w-0 text-center p-6 sm:p-8">
           <h1 className="font-display text-xl font-bold text-gray-800 mb-2">
             Supabase not configured
           </h1>
@@ -70,8 +70,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30 overflow-x-hidden">
+      <Card className="w-full max-w-md min-w-0">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-lavender-300 to-rose-300 flex items-center justify-center mb-4">
             <HeartPulse className="w-8 h-8 text-white" />

@@ -65,8 +65,8 @@ export default function DashboardPage() {
 
       {/* Injection countdown */}
       <Card className="mb-6 bg-gradient-to-r from-lavender-50 to-rose-50 border-lavender-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="w-14 h-14 rounded-2xl bg-white/80 flex items-center justify-center shadow-soft">
               <Syringe className="w-7 h-7 text-lavender-500" />
             </div>
@@ -85,7 +85,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <Link href="/injections">
+          <Link href="/injections" className="shrink-0 self-start sm:self-center">
             <Button size="sm">Log injection</Button>
           </Link>
         </div>

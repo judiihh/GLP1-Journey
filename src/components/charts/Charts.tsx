@@ -72,7 +72,8 @@ export function TrendChart({
   };
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <div className="w-full min-w-0 overflow-hidden" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       {type === "bar" ? (
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
@@ -118,6 +119,7 @@ export function TrendChart({
         </AreaChart>
       )}
     </ResponsiveContainer>
+    </div>
   );
 }
 

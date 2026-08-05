@@ -27,15 +27,15 @@ export function Button({
   };
 
   const sizes = {
-    sm: "px-3 py-1.5 text-sm rounded-lg",
-    md: "px-5 py-2.5 text-sm rounded-xl",
-    lg: "px-6 py-3 text-base rounded-xl",
+    sm: "px-3 py-2 min-h-[36px] text-sm rounded-lg",
+    md: "px-5 py-2.5 min-h-[44px] text-sm rounded-xl",
+    lg: "px-6 py-3 min-h-[48px] text-base rounded-xl",
   };
 
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation",
         variants[variant],
         sizes[size],
         className

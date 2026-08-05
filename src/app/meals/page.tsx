@@ -85,21 +85,21 @@ export default function MealsPage() {
 
       {/* Goals summary */}
       <Card className="mb-6 bg-gradient-to-r from-rose-50 to-lavender-50 border-rose-100">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-display font-bold text-lavender-600">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-display font-bold text-lavender-600">
               {profile.calorieGoal}
             </p>
             <p className="text-xs text-gray-500">Calorie goal</p>
           </div>
-          <div>
-            <p className="text-2xl font-display font-bold text-rose-500">
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-display font-bold text-rose-500">
               {profile.proteinGoal}g
             </p>
             <p className="text-xs text-gray-500">Protein goal</p>
           </div>
-          <div>
-            <p className="text-2xl font-display font-bold text-turquoise-500">
+          <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-display font-bold text-turquoise-500">
               {profile.fiberGoal}g
             </p>
             <p className="text-xs text-gray-500">Fiber goal</p>

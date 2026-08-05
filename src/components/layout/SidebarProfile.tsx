@@ -22,7 +22,7 @@ function getInitials(name: string, email?: string | null): string {
   return "?";
 }
 
-export function SidebarProfile() {
+export function SidebarProfile({ embedded }: { embedded?: boolean }) {
   const pathname = usePathname();
   const { data } = useApp();
   const { user } = useAuth();
@@ -39,7 +39,12 @@ export function SidebarProfile() {
   const hasMedication = profile?.medication && profile.onboardingComplete;
 
   return (
-    <div className="mt-auto pt-6 border-t border-lavender-100 space-y-3">
+    <div
+      className={cn(
+        "space-y-3",
+        embedded ? "pt-0" : "mt-auto pt-6 border-t border-lavender-100"
+      )}
+    >
       <Link
         href="/settings"
         className={cn(
