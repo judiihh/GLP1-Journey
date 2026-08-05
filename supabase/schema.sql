@@ -120,6 +120,15 @@ create table if not exists public.meal_plans (
   unique (user_id, date)
 );
 
+-- Wellness assistant chat history
+create table if not exists public.assistant_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  role text not null check (role in ('user', 'assistant')),
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -130,6 +139,7 @@ create index if not exists idx_weight_logs_user_date on public.weight_logs (user
 create index if not exists idx_measurement_logs_user_date on public.measurement_logs (user_id, date desc);
 create index if not exists idx_side_effect_logs_user_date on public.side_effect_logs (user_id, date desc);
 create index if not exists idx_meal_plans_user_date on public.meal_plans (user_id, date desc);
+create index if not exists idx_assistant_messages_user_created on public.assistant_messages (user_id, created_at asc);
 
 -- ============================================================
 -- UPDATED_AT TRIGGER
@@ -192,6 +202,7 @@ alter table public.measurement_logs enable row level security;
 alter table public.side_effect_logs enable row level security;
 alter table public.reminder_settings enable row level security;
 alter table public.meal_plans enable row level security;
+alter table public.assistant_messages enable row level security;
 
 -- Profiles
 create policy "Users can view own profile"
@@ -329,7 +340,37 @@ create policy "Users can delete own meal plans"
   on public.meal_plans for delete
   using (auth.uid() = user_id);
 
+-- Assistant messages
+create policy "Users can view own assistant messages"
+  on public.assistant_messages for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own assistant messages"
+  on public.assistant_messages for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete own assistant messages"
+  on public.assistant_messages for delete
+  using (auth.uid() = user_id);
+
 -- ============================================================
 -- MIGRATION (existing projects): run once if upgrading
 -- ============================================================
 -- alter table public.profiles add column if not exists next_injection_date date;
+--
+-- Assistant chat history (safe to re-run):
+-- create table if not exists public.assistant_messages (
+--   id uuid primary key default gen_random_uuid(),
+--   user_id uuid not null references auth.users (id) on delete cascade,
+--   role text not null check (role in ('user', 'assistant')),
+--   content text not null,
+--   created_at timestamptz not null default now()
+-- );
+-- create index if not exists idx_assistant_messages_user_created on public.assistant_messages (user_id, created_at asc);
+-- alter table public.assistant_messages enable row level security;
+-- drop policy if exists "Users can view own assistant messages" on public.assistant_messages;
+-- drop policy if exists "Users can insert own assistant messages" on public.assistant_messages;
+-- drop policy if exists "Users can delete own assistant messages" on public.assistant_messages;
+-- create policy "Users can view own assistant messages" on public.assistant_messages for select using (auth.uid() = user_id);
+-- create policy "Users can insert own assistant messages" on public.assistant_messages for insert with check (auth.uid() = user_id);
+-- create policy "Users can delete own assistant messages" on public.assistant_messages for delete using (auth.uid() = user_id);

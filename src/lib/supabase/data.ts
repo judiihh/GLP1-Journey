@@ -608,6 +608,7 @@ export async function deleteAllUserData(
     supabase.from("measurement_logs").delete().eq("user_id", userId),
     supabase.from("side_effect_logs").delete().eq("user_id", userId),
     supabase.from("meal_plans").delete().eq("user_id", userId),
+    supabase.from("assistant_messages").delete().eq("user_id", userId),
     supabase
       .from("profiles")
       .update({ onboarding_complete: false, name: "" })

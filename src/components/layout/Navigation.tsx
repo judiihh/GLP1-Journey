@@ -13,6 +13,7 @@ import {
   FileText,
   Settings,
   Sparkles,
+  MessageCircle,
   Menu,
   X,
 } from "lucide-react";
@@ -29,6 +30,7 @@ export const navItems = [
   { href: "/symptoms", label: "Symptoms", icon: HeartPulse },
   { href: "/meals", label: "Meals", icon: UtensilsCrossed },
   { href: "/insights", label: "Insights", icon: Sparkles },
+  { href: "/assistant", label: "Assistant", icon: MessageCircle },
   { href: "/report", label: "Report", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
