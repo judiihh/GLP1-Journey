@@ -38,7 +38,8 @@ export interface UserProfile {
   medication: GLP1Medication;
   currentDosage: number;
   dosageUnit: "mg" | "units";
-  injectionDay: number; // 0-6, Sunday = 0
+  injectionDay: number; // 0-6, derived from nextInjectionDate (legacy compat)
+  nextInjectionDate?: string; // ISO date — next scheduled injection
   injectionTime: string; // HH:mm
   startDate: string;
   goalWeight?: number;

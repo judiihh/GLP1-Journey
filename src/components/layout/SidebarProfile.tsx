@@ -42,7 +42,9 @@ export function SidebarProfile({ embedded }: { embedded?: boolean }) {
     <div
       className={cn(
         "space-y-3",
-        embedded ? "pt-0" : "mt-auto pt-6 border-t border-lavender-100"
+        embedded
+          ? "pt-0"
+          : "mt-6 pt-6 border-t border-lavender-100"
       )}
     >
       <Link

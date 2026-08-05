@@ -13,6 +13,7 @@ create table if not exists public.profiles (
   current_dosage numeric not null default 0.25,
   dosage_unit text not null default 'mg' check (dosage_unit in ('mg', 'units')),
   injection_day integer not null default 0 check (injection_day between 0 and 6),
+  next_injection_date date,
   injection_time text not null default '09:00',
   start_date date not null default current_date,
   goal_weight numeric,
@@ -327,3 +328,8 @@ create policy "Users can update own meal plans"
 create policy "Users can delete own meal plans"
   on public.meal_plans for delete
   using (auth.uid() = user_id);
+
+-- ============================================================
+-- MIGRATION (existing projects): run once if upgrading
+-- ============================================================
+-- alter table public.profiles add column if not exists next_injection_date date;

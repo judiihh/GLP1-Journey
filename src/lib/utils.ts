@@ -2,6 +2,7 @@ import {
   addDays,
   differenceInDays,
   format,
+  getDay,
   parseISO,
   startOfDay,
   subDays,
@@ -9,9 +10,11 @@ import {
 import type {
   AppData,
   DailyMealPlan,
+  GLP1Medication,
   InjectionSite,
   MealPlanItem,
   PatternInsight,
+  UserProfile,
 } from "./types";
 import { INJECTION_SITES, MEAL_TEMPLATES, MEDICATIONS } from "./constants";
 
@@ -24,6 +27,47 @@ export function todayISO(): string {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+export function defaultNextInjectionDate(daysAhead = 7): string {
+  return format(addDays(new Date(), daysAhead), "yyyy-MM-dd");
+}
+
+export function getInjectionIntervalDays(medication: GLP1Medication): number {
+  const med = MEDICATIONS.find((m) => m.id === medication);
+  return med?.frequency.toLowerCase().includes("daily") ? 1 : 7;
+}
+
+export function advanceNextInjectionDate(
+  fromDate: string,
+  medication: GLP1Medication
+): string {
+  return format(
+    addDays(parseISO(fromDate), getInjectionIntervalDays(medication)),
+    "yyyy-MM-dd"
+  );
+}
+
+export function profileWithNextInjectionFromLog(
+  profile: UserProfile,
+  injectionDate: string
+): UserProfile {
+  const nextInjectionDate = advanceNextInjectionDate(
+    injectionDate,
+    profile.medication
+  );
+  return {
+    ...profile,
+    nextInjectionDate,
+    injectionDay: getDay(parseISO(nextInjectionDate)),
+  };
+}
+
+export function formatInjectionCountdown(daysUntil: number | null): string {
+  if (daysUntil === null) return "Not scheduled";
+  if (daysUntil < 0) return "Overdue";
+  if (daysUntil === 0) return "Today!";
+  return `In ${daysUntil} day${daysUntil > 1 ? "s" : ""}`;
+}
+
 export function getMedicationLabel(id: string): string {
   return MEDICATIONS.find((m) => m.id === id)?.brand ?? id;
 }
@@ -32,18 +76,35 @@ export function getSiteLabel(id: InjectionSite): string {
   return INJECTION_SITES.find((s) => s.id === id)?.label ?? id;
 }
 
-export function getNextInjectionDate(profile: AppData["profile"]): Date | null {
+export function getNextInjectionDate(
+  profile: AppData["profile"],
+  injections: AppData["injections"] = []
+): Date | null {
   if (!profile) return null;
   const today = startOfDay(new Date());
-  const lastInjection = getLastInjection(profile, []);
-  let nextDate = lastInjection
-    ? addDays(parseISO(lastInjection.date), 7)
-    : today;
+  const interval = getInjectionIntervalDays(profile.medication);
 
-  while (nextDate < today) {
-    nextDate = addDays(nextDate, 7);
+  if (profile.nextInjectionDate) {
+    return startOfDay(parseISO(profile.nextInjectionDate));
   }
-  return nextDate;
+
+  const lastInjection = injections.length > 0 ? injections[0] : null;
+  if (lastInjection) {
+    let next = addDays(parseISO(lastInjection.date), interval);
+    while (next < today) {
+      next = addDays(next, interval);
+    }
+    return next;
+  }
+
+  // Legacy: next occurrence of injectionDay weekday
+  for (let i = 0; i < 7; i++) {
+    const candidate = addDays(today, i);
+    if (candidate.getDay() === profile.injectionDay) {
+      return candidate;
+    }
+  }
+  return today;
 }
 
 export function getLastInjection(
@@ -54,10 +115,22 @@ export function getLastInjection(
   return null;
 }
 
-export function getDaysUntilInjection(profile: AppData["profile"], injections: AppData["injections"]): number | null {
-  const next = getNextInjectionDate(profile);
+export function getDaysUntilInjection(
+  profile: AppData["profile"],
+  injections: AppData["injections"]
+): number | null {
+  const next = getNextInjectionDate(profile, injections);
   if (!next) return null;
   return differenceInDays(startOfDay(next), startOfDay(new Date()));
+}
+
+export function getNextInjectionLabel(
+  profile: AppData["profile"],
+  injections: AppData["injections"]
+): string | null {
+  const next = getNextInjectionDate(profile, injections);
+  if (!next) return null;
+  return formatDate(next);
 }
 
 export function suggestNextInjectionSite(

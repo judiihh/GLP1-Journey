@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/Button";
 import { TrendChart } from "@/components/charts/Charts";
 import {
   formatDate,
+  formatInjectionCountdown,
   getDaysUntilInjection,
   getMedicationLabel,
+  getNextInjectionLabel,
   getNutritionAverages,
   getTreatmentConsistency,
   getWeightProgress,
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   if (!profile) return null;
 
   const daysUntil = getDaysUntilInjection(profile, injections);
+  const nextInjectionLabel = getNextInjectionLabel(profile, injections);
   const todayNutrition = nutrition.find((n) => n.date === todayISO());
   const weightProgress = getWeightProgress(weights);
   const consistency = getTreatmentConsistency(injections);
@@ -73,13 +76,15 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-gray-500">Next injection</p>
               <p className="font-display text-xl font-bold text-gray-800">
-                {daysUntil === 0
-                  ? "Today!"
-                  : daysUntil !== null
-                    ? `In ${daysUntil} day${daysUntil > 1 ? "s" : ""}`
-                    : "Not scheduled"}
+                {formatInjectionCountdown(daysUntil)}
               </p>
-              <p className="text-xs text-lavender-500 mt-0.5">
+              {nextInjectionLabel && (
+                <p className="text-xs text-lavender-500 mt-0.5">
+                  {nextInjectionLabel}
+                  {profile.injectionTime ? ` at ${profile.injectionTime}` : ""}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-0.5">
                 {getMedicationLabel(profile.medication)} · {profile.currentDosage}
                 {profile.dosageUnit}
               </p>

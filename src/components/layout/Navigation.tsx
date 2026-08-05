@@ -98,7 +98,7 @@ export function Sidebar() {
   useReminders();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white/60 backdrop-blur-md border-r border-lavender-100/50 min-h-screen p-6">
+    <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white/60 backdrop-blur-md border-r border-lavender-100/50 sticky top-0 h-screen overflow-y-auto p-6">
       <div className="mb-8">
         <Brand />
       </div>

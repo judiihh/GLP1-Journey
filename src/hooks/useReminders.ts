@@ -2,8 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useApp } from "@/hooks/useAppData";
-import { getDaysUntilInjection, getMedicationLabel } from "@/lib/utils";
-import { DAYS_OF_WEEK } from "@/lib/constants";
+import { getDaysUntilInjection, getMedicationLabel, formatDate } from "@/lib/utils";
 
 export function useReminders() {
   const { data } = useApp();
@@ -26,12 +25,14 @@ export function useReminders() {
 
     const showNotification = () => {
       const med = getMedicationLabel(data.profile!.medication);
-      const dayName = DAYS_OF_WEEK[data.profile!.injectionDay];
+      const dateLabel = data.profile!.nextInjectionDate
+        ? formatDate(data.profile!.nextInjectionDate)
+        : "your scheduled day";
       new Notification("Injection Reminder 💜", {
         body:
           daysUntil === 0
             ? `Today is your ${med} injection day!`
-            : `Your ${med} injection is in ${daysUntil} day${daysUntil > 1 ? "s" : ""} (${dayName}).`,
+            : `Your ${med} injection is in ${daysUntil} day${daysUntil > 1 ? "s" : ""} (${dateLabel}).`,
         icon: "/icon.svg",
       });
       notifiedRef.current = key;

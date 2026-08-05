@@ -41,6 +41,7 @@ import {
   clearAllData as localClearAllData,
 } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
+import { profileWithNextInjectionFromLog } from "@/lib/utils";
 
 interface AppContextValue {
   data: AppData;
@@ -139,11 +140,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const saved = await insertInjection(supabase, user.id, injection);
           let profileUpdate: UserProfile | null = null;
           setData((prev) => {
-            if (prevNeedsDosageUpdate(injection, prev.profile) && prev.profile) {
-              profileUpdate = {
-                ...prev.profile,
-                currentDosage: injection.dosage,
-              };
+            if (prev.profile) {
+              profileUpdate = mergeProfileAfterInjection(prev.profile, injection);
             }
             return {
               ...prev,
@@ -155,7 +153,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             await upsertProfile(supabase, profileUpdate);
           }
         } else {
-          setData(localAddInjection(injection));
+          setData((prev) => {
+            let next = localAddInjection(injection);
+            if (prev.profile) {
+              next = localUpdateProfile(
+                mergeProfileAfterInjection(prev.profile, injection)
+              );
+            }
+            return next;
+          });
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to log injection");
@@ -463,6 +469,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AppContext.Provider>
   );
+}
+
+function mergeProfileAfterInjection(
+  profile: UserProfile,
+  injection: AppData["injections"][0]
+): UserProfile {
+  let updated = profileWithNextInjectionFromLog(profile, injection.date);
+  if (prevNeedsDosageUpdate(injection, profile)) {
+    updated = { ...updated, currentDosage: injection.dosage };
+  }
+  return updated;
 }
 
 function prevNeedsDosageUpdate(

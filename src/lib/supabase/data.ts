@@ -26,6 +26,7 @@ interface ProfileRow {
   current_dosage: number;
   dosage_unit: string;
   injection_day: number;
+  next_injection_date: string | null;
   injection_time: string;
   start_date: string;
   goal_weight: number | null;
@@ -124,6 +125,7 @@ function mapProfile(row: ProfileRow): UserProfile {
     currentDosage: Number(row.current_dosage),
     dosageUnit: row.dosage_unit as UserProfile["dosageUnit"],
     injectionDay: row.injection_day,
+    nextInjectionDate: row.next_injection_date ?? undefined,
     injectionTime: row.injection_time,
     startDate: row.start_date,
     goalWeight: row.goal_weight ?? undefined,
@@ -146,6 +148,7 @@ function profileToRow(profile: UserProfile) {
     current_dosage: profile.currentDosage,
     dosage_unit: profile.dosageUnit,
     injection_day: profile.injectionDay,
+    next_injection_date: profile.nextInjectionDate ?? null,
     injection_time: profile.injectionTime,
     start_date: profile.startDate,
     goal_weight: profile.goalWeight ?? null,

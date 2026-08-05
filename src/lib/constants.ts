@@ -77,7 +77,7 @@ export const MEDICATIONS: {
     name: "Retatrutide",
     brand: "Retatrutide",
     defaultUnit: "mg",
-    commonDosages: [1, 2, 4, 8, 12],
+    commonDosages: [1, 2, 3, 4, 8, 12],
     frequency: "Weekly · Investigational",
   },
   {

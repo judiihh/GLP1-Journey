@@ -10,8 +10,10 @@ import { Input, Select, Textarea } from "@/components/ui/Input";
 import { BodyMap } from "@/components/charts/Charts";
 import {
   formatDate,
+  formatInjectionCountdown,
   getDaysUntilInjection,
   getMedicationLabel,
+  getNextInjectionLabel,
   getSiteLabel,
   getSiteRotationStatus,
   suggestNextInjectionSite,
@@ -48,6 +50,7 @@ export default function InjectionsPage() {
   const suggestedSite = suggestNextInjectionSite(injections);
   const siteStatus = getSiteRotationStatus(injections);
   const daysUntil = getDaysUntilInjection(profile, injections);
+  const nextInjectionLabel = getNextInjectionLabel(profile, injections);
 
   const openForm = () => {
     setMedication(profile.medication);
@@ -110,12 +113,11 @@ export default function InjectionsPage() {
         <Card>
           <p className="text-xs text-gray-500">Next injection</p>
           <p className="font-display text-lg font-bold text-gray-800 mt-1">
-            {daysUntil === 0
-              ? "Today"
-              : daysUntil !== null
-                ? `${daysUntil} day${daysUntil > 1 ? "s" : ""}`
-                : "—"}
+            {formatInjectionCountdown(daysUntil)}
           </p>
+          {nextInjectionLabel && (
+            <p className="text-xs text-lavender-500 mt-0.5">{nextInjectionLabel}</p>
+          )}
         </Card>
         <Card>
           <p className="text-xs text-gray-500">Profile medication</p>

@@ -10,8 +10,10 @@ import { Input, Select } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 import { testConnection } from "@/lib/supabase/data";
 import { requestNotificationPermission } from "@/hooks/useReminders";
-import { MEDICATIONS, DAYS_OF_WEEK } from "@/lib/constants";
+import { MEDICATIONS } from "@/lib/constants";
 import type { GLP1Medication } from "@/lib/types";
+import { defaultNextInjectionDate } from "@/lib/utils";
+import { getDay, parseISO } from "date-fns";
 import { Bell, Trash2, Save, LogOut, Database } from "lucide-react";
 
 export default function SettingsPage() {
@@ -24,8 +26,8 @@ export default function SettingsPage() {
     profile?.medication ?? "ozempic"
   );
   const [dosage, setDosage] = useState(String(profile?.currentDosage ?? 0.25));
-  const [injectionDay, setInjectionDay] = useState(
-    String(profile?.injectionDay ?? 0)
+  const [nextInjectionDate, setNextInjectionDate] = useState(
+    profile?.nextInjectionDate ?? defaultNextInjectionDate()
   );
   const [injectionTime, setInjectionTime] = useState(
     profile?.injectionTime ?? "09:00"
@@ -64,7 +66,8 @@ export default function SettingsPage() {
       medication,
       currentDosage: parseFloat(dosage),
       dosageUnit: med.defaultUnit,
-      injectionDay: parseInt(injectionDay),
+      injectionDay: getDay(parseISO(nextInjectionDate)),
+      nextInjectionDate,
       injectionTime,
       calorieGoal: parseInt(calorieGoal),
       proteinGoal: parseInt(proteinGoal),
@@ -164,15 +167,12 @@ export default function SettingsPage() {
                 label: `${d} ${med.defaultUnit}`,
               }))}
             />
-            <div className="grid grid-cols-2 gap-3">
-              <Select
-                label="Injection day"
-                value={injectionDay}
-                onChange={(e) => setInjectionDay(e.target.value)}
-                options={DAYS_OF_WEEK.map((d, i) => ({
-                  value: String(i),
-                  label: d,
-                }))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Next injection date"
+                type="date"
+                value={nextInjectionDate}
+                onChange={(e) => setNextInjectionDate(e.target.value)}
               />
               <Input
                 label="Injection time"

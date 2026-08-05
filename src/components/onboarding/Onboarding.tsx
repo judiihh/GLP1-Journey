@@ -6,8 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
-import { MEDICATIONS, DAYS_OF_WEEK, DEFAULT_PROFILE } from "@/lib/constants";
+import { MEDICATIONS, DEFAULT_PROFILE } from "@/lib/constants";
 import type { GLP1Medication } from "@/lib/types";
+import { defaultNextInjectionDate } from "@/lib/utils";
+import { getDay, parseISO } from "date-fns";
 import { HeartPulse, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ui } from "@/lib/ui-classes";
@@ -19,7 +21,9 @@ export function Onboarding() {
   const [name, setName] = useState("");
   const [medication, setMedication] = useState<GLP1Medication>("ozempic");
   const [dosage, setDosage] = useState("0.25");
-  const [injectionDay, setInjectionDay] = useState("0");
+  const [nextInjectionDate, setNextInjectionDate] = useState(
+    defaultNextInjectionDate()
+  );
   const [injectionTime, setInjectionTime] = useState("09:00");
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -37,7 +41,8 @@ export function Onboarding() {
       medication,
       currentDosage: parseFloat(dosage),
       dosageUnit: med.defaultUnit,
-      injectionDay: parseInt(injectionDay),
+      injectionDay: getDay(parseISO(nextInjectionDate)),
+      nextInjectionDate,
       injectionTime,
       startDate,
       goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
@@ -148,7 +153,7 @@ export function Onboarding() {
           Your injection schedule
         </h2>
         <p className="text-gray-500 text-sm mt-1">
-          {`We'll remind you before your next dose.`}
+          {`Pick the exact date of your next dose — we'll remind you beforehand.`}
         </p>
       </div>
       <Input
@@ -157,11 +162,11 @@ export function Onboarding() {
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
       />
-      <Select
-        label="Injection day"
-        value={injectionDay}
-        onChange={(e) => setInjectionDay(e.target.value)}
-        options={DAYS_OF_WEEK.map((d, i) => ({ value: String(i), label: d }))}
+      <Input
+        label="Next injection date"
+        type="date"
+        value={nextInjectionDate}
+        onChange={(e) => setNextInjectionDate(e.target.value)}
       />
       <Input
         label="Preferred injection time"
