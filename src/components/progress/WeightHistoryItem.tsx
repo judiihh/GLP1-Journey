@@ -114,41 +114,46 @@ export function WeightHistoryItem({
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-lavender-50/50 group">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
-          <Scale className="w-5 h-5 text-lavender-400" />
+    <div className="p-3 rounded-xl bg-lavender-50/50 group">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+            <Scale className="w-5 h-5 text-lavender-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-sm text-gray-800">
+              {log.weight} {log.unit}
+            </p>
+            <p className="text-xs text-gray-500">{formatDate(log.date)}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="font-medium text-sm text-gray-800">
-            {log.weight} {log.unit}
-          </p>
-          <p className="text-xs text-gray-500">{formatDate(log.date)}</p>
-          {log.notes && (
-            <p className="text-xs text-gray-400 mt-0.5 truncate">{log.notes}</p>
-          )}
+
+        <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="p-2 rounded-lg text-lavender-500 hover:bg-lavender-100 transition-colors touch-manipulation"
+            aria-label="Edit weight entry"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isSaving}
+            className="p-2 rounded-lg text-rose-400 hover:bg-rose-100 hover:text-rose-600 transition-colors disabled:opacity-50 touch-manipulation"
+            aria-label="Delete weight entry"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="p-2 rounded-lg text-lavender-500 hover:bg-lavender-100 transition-colors"
-          aria-label="Edit weight entry"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isSaving}
-          className="p-2 rounded-lg text-rose-400 hover:bg-rose-100 hover:text-rose-600 transition-colors disabled:opacity-50"
-          aria-label="Delete weight entry"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
+      {log.notes && (
+        <p className="text-xs text-gray-400 mt-2 ml-[52px] break-words whitespace-pre-wrap leading-relaxed">
+          {log.notes}
+        </p>
+      )}
     </div>
   );
 }
