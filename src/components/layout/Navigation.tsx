@@ -71,7 +71,7 @@ export function Sidebar() {
 
       <div className="mt-auto pt-6 border-t border-lavender-100">
         <p className="text-xs text-gray-400 text-center leading-relaxed">
-          You&apos;re doing great. 💜
+          You're doing great. 💜
           <br />
           One day at a time.
         </p>

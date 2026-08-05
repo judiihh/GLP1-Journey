@@ -211,7 +211,7 @@ export default function InjectionsPage() {
               className="w-full p-6 rounded-2xl border-2 border-dashed border-lavender-200 hover:border-lavender-400 hover:bg-lavender-50/50 transition-all text-center"
             >
               <Syringe className="w-8 h-8 mx-auto text-lavender-400 mb-2" />
-              <p className="font-medium text-gray-700">Log today&apos;s injection</p>
+              <p className="font-medium text-gray-700">Log today's injection</p>
               <p className="text-sm text-gray-500 mt-1">
                 Suggested site: {getSiteLabel(suggestedSite)}
               </p>

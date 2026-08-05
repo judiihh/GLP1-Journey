@@ -66,7 +66,7 @@ export function Onboarding() {
         </p>
       </div>
       <Button size="lg" onClick={() => setStep(1)} className="w-full max-w-xs mx-auto">
-        Let&apos;s get started <ChevronRight className="w-4 h-4" />
+        Let's get started <ChevronRight className="w-4 h-4" />
       </Button>
     </div>,
 
@@ -147,7 +147,7 @@ export function Onboarding() {
           Your injection schedule
         </h2>
         <p className="text-gray-500 text-sm mt-1">
-          We&apos;ll remind you before your next dose.
+          We'll remind you before your next dose.
         </p>
       </div>
       <Input

@@ -141,7 +141,7 @@ export default function NutritionPage() {
                 onChange={(e) => setNotes(e.target.value)}
               />
               <Button type="submit" className="w-full">
-                Save today&apos;s nutrition
+                Save today's nutrition
               </Button>
             </form>
           )}

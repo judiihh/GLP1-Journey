@@ -131,7 +131,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          {mode === "signin" ? "Don&apos;t have an account?" : "Already have an account?"}{" "}
+          {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
           <button
             type="button"
             onClick={() => {
