@@ -135,7 +135,7 @@ export default function SymptomsPage() {
                 onChange={(e) => setNotes(e.target.value)}
               />
               <Button type="submit" className="w-full">
-                Save today's symptoms
+                {`Save today's symptoms`}
               </Button>
             </form>
           )}

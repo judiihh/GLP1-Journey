@@ -113,11 +113,11 @@ export default function MealsPage() {
             <Sun className="w-8 h-8 text-lavender-400" />
           </div>
           <h3 className="font-display text-lg font-semibold text-gray-800 mb-2">
-            Ready for today's meal plan?
+            {`Ready for today's meal plan?`}
           </h3>
           <p className="text-gray-500 text-sm max-w-md mx-auto mb-6">
-            We'll create a day of GLP-1-friendly meals focused on protein,
-            fiber, hydration, and smaller portions that are gentle on your stomach.
+            {`We'll create a day of GLP-1-friendly meals focused on protein,
+            fiber, hydration, and smaller portions that are gentle on your stomach.`}
           </p>
           <Button size="lg" onClick={generate}>
             Generate my meal plan

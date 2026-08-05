@@ -48,8 +48,8 @@ export default function InsightsPage() {
             Keep logging — insights are on their way
           </h3>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
-            As you log injections, nutrition, symptoms, and weight, we'll
-            identify helpful patterns and connections for you and your doctor.
+            {`As you log injections, nutrition, symptoms, and weight, we'll
+            identify helpful patterns and connections for you and your doctor.`}
           </p>
         </Card>
       ) : (

@@ -82,7 +82,7 @@ export function SidebarProfile() {
       </Link>
 
       <p className="text-[10px] text-gray-400 text-center leading-relaxed px-1">
-        You're doing great. 💜 One day at a time.
+        {`You're doing great. 💜 One day at a time.`}
       </p>
     </div>
   );
