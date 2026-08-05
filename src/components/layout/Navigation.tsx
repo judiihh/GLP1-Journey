@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/cn";
 import { useReminders } from "@/hooks/useReminders";
 import { SidebarProfile } from "@/components/layout/SidebarProfile";
+import { ui } from "@/lib/ui-classes";
 
 const navItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
@@ -58,9 +59,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                active
-                  ? "bg-lavender-100 text-lavender-600 shadow-soft"
-                  : "text-gray-600 hover:bg-lavender-50 hover:text-lavender-500"
+                active ? ui.activeNav : ui.navIdle
               )}
             >
               <item.icon className="w-4.5 h-4.5" size={18} />
@@ -90,7 +89,7 @@ export function MobileNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors min-w-0",
-                active ? "text-lavender-600" : "text-gray-400"
+                active ? ui.activeMobileNav : "text-gray-400"
               )}
             >
               <item.icon size={20} />

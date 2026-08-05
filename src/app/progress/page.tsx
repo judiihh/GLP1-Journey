@@ -8,12 +8,14 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
+import { WeightHistoryItem } from "@/components/progress/WeightHistoryItem";
 import { ProgressRing } from "@/components/ui/Progress";
 import { formatDate, getWeightProgress, todayISO } from "@/lib/utils";
 import { CheckCircle2, Scale, Ruler, Target } from "lucide-react";
 
 export default function ProgressPage() {
-  const { data, logWeight, logMeasurement } = useApp();
+  const { data, logWeight, updateWeight, deleteWeight, logMeasurement, isSaving } =
+    useApp();
   const { profile, weights, measurements } = data;
 
   const [weight, setWeight] = useState("");
@@ -231,24 +233,30 @@ export default function ProgressPage() {
       </div>
 
       {/* Weight history */}
-      {weights.length > 0 && (
-        <Card>
-          <CardHeader title="Weight history" />
-          <div className="space-y-2">
-            {weights.slice(0, 8).map((w) => (
-              <div
+      <Card>
+        <CardHeader
+          title="Weight history"
+          subtitle="Tap edit or delete on any entry"
+        />
+        {weights.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <Scale className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No weight entries logged yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {weights.map((w) => (
+              <WeightHistoryItem
                 key={w.id}
-                className="flex justify-between items-center p-3 rounded-xl bg-lavender-50/50"
-              >
-                <span className="text-sm text-gray-600">{formatDate(w.date)}</span>
-                <span className="font-medium text-gray-800">
-                  {w.weight} {w.unit}
-                </span>
-              </div>
+                log={w}
+                onUpdate={updateWeight}
+                onDelete={deleteWeight}
+                isSaving={isSaving}
+              />
             ))}
           </div>
-        </Card>
-      )}
+        )}
+      </Card>
     </div>
   );
 }

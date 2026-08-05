@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
+import { ui } from "@/lib/ui-classes";
 
 export default function DashboardPage() {
   const { data } = useApp();
@@ -154,7 +155,7 @@ export default function DashboardPage() {
             title="Weight trend"
             subtitle="Your progress over time"
             action={
-              <Link href="/progress" className="text-lavender-500 text-sm flex items-center gap-1">
+              <Link href="/progress" className={`${ui.linkAccent} text-sm flex items-center gap-1`}>
                 View all <ChevronRight className="w-3 h-3" />
               </Link>
             }
@@ -177,7 +178,7 @@ export default function DashboardPage() {
                 : "Start logging to see trends"
             }
             action={
-              <Link href="/nutrition" className="text-lavender-500 text-sm flex items-center gap-1">
+              <Link href="/nutrition" className={`${ui.linkAccent} text-sm flex items-center gap-1`}>
                 Log today <ChevronRight className="w-3 h-3" />
               </Link>
             }

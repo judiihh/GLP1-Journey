@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/Card";
 import { MEDICATIONS, DAYS_OF_WEEK, DEFAULT_PROFILE } from "@/lib/constants";
 import type { GLP1Medication } from "@/lib/types";
 import { HeartPulse, ChevronRight, Sparkles } from "lucide-react";
+import { cn } from "@/lib/cn";
+import { ui } from "@/lib/ui-classes";
 
 export function Onboarding() {
   const { setProfile } = useApp();
@@ -112,11 +114,10 @@ export function Onboarding() {
               setMedication(m.id);
               setDosage(String(m.commonDosages[0]));
             }}
-            className={`p-3 rounded-xl border-2 text-left transition-all ${
-              medication === m.id
-                ? "border-lavender-400 bg-lavender-50"
-                : "border-gray-100 hover:border-lavender-200"
-            }`}
+            className={cn(
+              "p-3 rounded-xl border-2 text-left transition-all",
+              medication === m.id ? ui.selectableActive : ui.selectableIdle
+            )}
           >
             <p className="font-semibold text-sm text-gray-800">{m.brand}</p>
             <p className="text-xs text-gray-500">{m.frequency}</p>

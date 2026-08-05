@@ -171,9 +171,10 @@ export async function generateMedicalSummary(data: AppData): Promise<void> {
     y += 4;
     autoTable(doc, {
       startY: y,
-      head: [["Date", "Dosage", "Site"]],
+      head: [["Date", "Medication", "Dosage", "Site"]],
       body: injections.slice(0, 8).map((i) => [
         formatDate(i.date),
+        getMedicationLabel(i.medication),
         `${i.dosage} ${i.dosageUnit}`,
         i.site.replace(/-/g, " "),
       ]),

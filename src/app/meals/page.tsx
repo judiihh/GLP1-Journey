@@ -7,8 +7,9 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/Progress";
 import { generateMealPlan } from "@/lib/utils";
+import { generateMealPlanPdf } from "@/lib/pdf-meal-plan";
 import type { DailyMealPlan } from "@/lib/types";
-import { RefreshCw, Sun, Moon, Coffee, Cookie } from "lucide-react";
+import { RefreshCw, Sun, Moon, Coffee, Cookie, Download } from "lucide-react";
 
 const mealIcons = {
   breakfast: Sun,
@@ -28,6 +29,7 @@ export default function MealsPage() {
   const { data } = useApp();
   const { profile } = data;
   const [plan, setPlan] = useState<DailyMealPlan | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   if (!profile) return null;
 
@@ -41,16 +43,43 @@ export default function MealsPage() {
     );
   };
 
+  const handleDownloadPdf = async () => {
+    if (!plan) return;
+    setDownloading(true);
+    try {
+      await generateMealPlanPdf(plan, profile);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
         title="Meal Plans"
         subtitle="GLP-1-friendly meals tailored to your nutrition goals"
         action={
-          <Button onClick={generate}>
-            <RefreshCw className="w-4 h-4" />
-            {plan ? "Regenerate" : "Generate plan"}
-          </Button>
+          plan ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={handleDownloadPdf}
+                loading={downloading}
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </Button>
+              <Button onClick={generate}>
+                <RefreshCw className="w-4 h-4" />
+                Regenerate
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={generate}>
+              <RefreshCw className="w-4 h-4" />
+              Generate plan
+            </Button>
+          )
         }
       />
 

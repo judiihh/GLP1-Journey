@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { useApp } from "@/hooks/useAppData";
 import { useAuth } from "@/hooks/useAuth";
 import { getMedicationLabel } from "@/lib/utils";
+import { ui } from "@/lib/ui-classes";
 
 function getInitials(name: string, email?: string | null): string {
   const trimmed = name.trim();
@@ -43,9 +44,7 @@ export function SidebarProfile() {
         href="/settings"
         className={cn(
           "block p-3 rounded-2xl transition-all group",
-          isSettings
-            ? "bg-lavender-100 shadow-soft ring-1 ring-lavender-200"
-            : "bg-white/70 hover:bg-lavender-50 hover:shadow-soft"
+          isSettings ? ui.activeCard : "bg-white/70 hover:bg-lavender-50 hover:shadow-soft"
         )}
       >
         <div className="flex items-center gap-3">

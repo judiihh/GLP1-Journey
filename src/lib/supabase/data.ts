@@ -354,6 +354,47 @@ export async function insertInjection(
   return mapInjection(data as InjectionRow);
 }
 
+export async function updateInjection(
+  supabase: SupabaseClient,
+  userId: string,
+  injection: InjectionLog
+): Promise<InjectionLog> {
+  const { data, error } = await supabase
+    .from("injections")
+    .update({
+      date: injection.date,
+      time: injection.time,
+      medication: injection.medication,
+      dosage: injection.dosage,
+      dosage_unit: injection.dosageUnit,
+      site: injection.site,
+      notes: injection.notes ?? null,
+      dosage_changed: injection.dosageChanged ?? false,
+      previous_dosage: injection.previousDosage ?? null,
+    })
+    .eq("id", injection.id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapInjection(data as InjectionRow);
+}
+
+export async function deleteInjection(
+  supabase: SupabaseClient,
+  userId: string,
+  injectionId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("injections")
+    .delete()
+    .eq("id", injectionId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
 export async function upsertNutrition(
   supabase: SupabaseClient,
   userId: string,
@@ -403,6 +444,42 @@ export async function insertWeight(
 
   if (error) throw error;
   return mapWeight(data as WeightRow);
+}
+
+export async function updateWeight(
+  supabase: SupabaseClient,
+  userId: string,
+  log: WeightLog
+): Promise<WeightLog> {
+  const { data, error } = await supabase
+    .from("weight_logs")
+    .update({
+      date: log.date,
+      weight: log.weight,
+      unit: log.unit,
+      notes: log.notes ?? null,
+    })
+    .eq("id", log.id)
+    .eq("user_id", userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapWeight(data as WeightRow);
+}
+
+export async function deleteWeight(
+  supabase: SupabaseClient,
+  userId: string,
+  weightId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("weight_logs")
+    .delete()
+    .eq("id", weightId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
 }
 
 export async function insertMeasurement(

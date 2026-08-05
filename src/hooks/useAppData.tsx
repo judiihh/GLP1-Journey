@@ -12,10 +12,14 @@ import type { AppData, ReminderSettings, UserProfile } from "@/lib/types";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   deleteAllUserData,
+  deleteInjection as supabaseDeleteInjection,
   fetchAppData,
   insertInjection,
   insertMeasurement,
   insertWeight,
+  updateWeight as supabaseUpdateWeight,
+  deleteWeight as supabaseDeleteWeight,
+  updateInjection as supabaseUpdateInjection,
   upsertNutrition,
   upsertProfile,
   upsertReminders,
@@ -28,8 +32,12 @@ import {
   addNutrition as localAddNutrition,
   addSideEffect as localAddSideEffect,
   addWeight as localAddWeight,
+  updateWeight as localUpdateWeight,
+  deleteWeight as localDeleteWeight,
   updateProfile as localUpdateProfile,
   updateReminders as localUpdateReminders,
+  deleteInjection as localDeleteInjection,
+  updateInjection as localUpdateInjection,
   clearAllData as localClearAllData,
 } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,8 +47,12 @@ interface AppContextValue {
   refresh: () => Promise<void>;
   setProfile: (profile: UserProfile) => Promise<void>;
   logInjection: (injection: AppData["injections"][0]) => Promise<void>;
+  updateInjection: (injection: AppData["injections"][0]) => Promise<void>;
+  deleteInjection: (id: string) => Promise<void>;
   logNutrition: (log: AppData["nutrition"][0]) => Promise<void>;
   logWeight: (log: AppData["weights"][0]) => Promise<void>;
+  updateWeight: (log: AppData["weights"][0]) => Promise<void>;
+  deleteWeight: (id: string) => Promise<void>;
   logMeasurement: (log: AppData["measurements"][0]) => Promise<void>;
   logSideEffect: (log: AppData["sideEffects"][0]) => Promise<void>;
   setReminders: (reminders: ReminderSettings) => Promise<void>;
@@ -155,6 +167,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [usingSupabase, supabase, user]
   );
 
+  const updateInjection = useCallback(
+    async (injection: AppData["injections"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await supabaseUpdateInjection(
+            supabase,
+            user.id,
+            injection
+          );
+          setData((prev) => ({
+            ...prev,
+            injections: prev.injections.map((i) =>
+              i.id === saved.id ? saved : i
+            ),
+          }));
+        } else {
+          setData(localUpdateInjection(injection));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update injection"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const deleteInjection = useCallback(
+    async (id: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          await supabaseDeleteInjection(supabase, user.id, id);
+          setData((prev) => ({
+            ...prev,
+            injections: prev.injections.filter((i) => i.id !== id),
+          }));
+        } else {
+          setData(localDeleteInjection(id));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to delete injection"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
   const logNutrition = useCallback(
     async (log: AppData["nutrition"][0]) => {
       setIsSaving(true);
@@ -199,6 +269,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to log weight");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const updateWeight = useCallback(
+    async (log: AppData["weights"][0]) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await supabaseUpdateWeight(supabase, user.id, log);
+          setData((prev) => ({
+            ...prev,
+            weights: prev.weights
+              .map((w) => (w.id === saved.id ? saved : w))
+              .sort((a, b) => b.date.localeCompare(a.date)),
+          }));
+        } else {
+          setData(localUpdateWeight(log));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update weight"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const deleteWeight = useCallback(
+    async (id: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          await supabaseDeleteWeight(supabase, user.id, id);
+          setData((prev) => ({
+            ...prev,
+            weights: prev.weights.filter((w) => w.id !== id),
+          }));
+        } else {
+          setData(localDeleteWeight(id));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to delete weight"
+        );
         throw err;
       } finally {
         setIsSaving(false);
@@ -320,8 +444,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refresh,
         setProfile,
         logInjection,
+        updateInjection,
+        deleteInjection,
         logNutrition,
         logWeight,
+        updateWeight,
+        deleteWeight,
         logMeasurement,
         logSideEffect,
         setReminders,
@@ -343,6 +471,7 @@ function prevNeedsDosageUpdate(
 ) {
   return (
     profile !== null &&
+    injection.medication === profile.medication &&
     (injection.dosageChanged || injection.dosage !== profile.currentDosage)
   );
 }

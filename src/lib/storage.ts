@@ -52,6 +52,25 @@ export function addInjection(
   return data;
 }
 
+export function updateInjection(
+  injection: AppData["injections"][0]
+): AppData {
+  const data = loadData();
+  const index = data.injections.findIndex((i) => i.id === injection.id);
+  if (index >= 0) {
+    data.injections[index] = injection;
+  }
+  saveData(data);
+  return data;
+}
+
+export function deleteInjection(id: string): AppData {
+  const data = loadData();
+  data.injections = data.injections.filter((i) => i.id !== id);
+  saveData(data);
+  return data;
+}
+
 export function addNutrition(log: AppData["nutrition"][0]): AppData {
   const data = loadData();
   const existing = data.nutrition.findIndex((n) => n.date === log.date);
@@ -67,6 +86,24 @@ export function addNutrition(log: AppData["nutrition"][0]): AppData {
 export function addWeight(log: AppData["weights"][0]): AppData {
   const data = loadData();
   data.weights.unshift(log);
+  saveData(data);
+  return data;
+}
+
+export function updateWeight(log: AppData["weights"][0]): AppData {
+  const data = loadData();
+  const index = data.weights.findIndex((w) => w.id === log.id);
+  if (index >= 0) {
+    data.weights[index] = log;
+    data.weights.sort((a, b) => b.date.localeCompare(a.date));
+  }
+  saveData(data);
+  return data;
+}
+
+export function deleteWeight(id: string): AppData {
+  const data = loadData();
+  data.weights = data.weights.filter((w) => w.id !== id);
   saveData(data);
   return data;
 }
