@@ -1,0 +1,313 @@
+import {
+  addDays,
+  differenceInDays,
+  format,
+  parseISO,
+  startOfDay,
+  subDays,
+} from "date-fns";
+import type {
+  AppData,
+  DailyMealPlan,
+  InjectionSite,
+  MealPlanItem,
+  PatternInsight,
+} from "./types";
+import { INJECTION_SITES, MEAL_TEMPLATES, MEDICATIONS } from "./constants";
+
+export function formatDate(date: string | Date, fmt = "MMM d, yyyy"): string {
+  const d = typeof date === "string" ? parseISO(date) : date;
+  return format(d, fmt);
+}
+
+export function todayISO(): string {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
+export function getMedicationLabel(id: string): string {
+  return MEDICATIONS.find((m) => m.id === id)?.brand ?? id;
+}
+
+export function getSiteLabel(id: InjectionSite): string {
+  return INJECTION_SITES.find((s) => s.id === id)?.label ?? id;
+}
+
+export function getNextInjectionDate(profile: AppData["profile"]): Date | null {
+  if (!profile) return null;
+  const today = startOfDay(new Date());
+  const lastInjection = getLastInjection(profile, []);
+  let nextDate = lastInjection
+    ? addDays(parseISO(lastInjection.date), 7)
+    : today;
+
+  while (nextDate < today) {
+    nextDate = addDays(nextDate, 7);
+  }
+  return nextDate;
+}
+
+export function getLastInjection(
+  profile: AppData["profile"],
+  injections: AppData["injections"]
+) {
+  if (injections.length > 0) return injections[0];
+  return null;
+}
+
+export function getDaysUntilInjection(profile: AppData["profile"], injections: AppData["injections"]): number | null {
+  const next = getNextInjectionDate(profile);
+  if (!next) return null;
+  return differenceInDays(startOfDay(next), startOfDay(new Date()));
+}
+
+export function suggestNextInjectionSite(
+  injections: AppData["injections"]
+): InjectionSite {
+  const recentSites = injections.slice(0, 3).map((i) => i.site);
+  const available = INJECTION_SITES.filter(
+    (s) => !recentSites.includes(s.id)
+  );
+  if (available.length > 0) {
+    const zoneOrder = ["abdomen", "thigh", "arm"] as const;
+    const lastZone = recentSites[0]
+      ? INJECTION_SITES.find((s) => s.id === recentSites[0])?.zone
+      : null;
+    const nextZoneIdx = lastZone
+      ? (zoneOrder.indexOf(lastZone) + 1) % zoneOrder.length
+      : 0;
+    const inZone = available.filter((s) => s.zone === zoneOrder[nextZoneIdx]);
+    return (inZone[0] ?? available[0]).id;
+  }
+  const usage = INJECTION_SITES.map((site) => ({
+    site: site.id,
+    count: injections.filter((i) => i.site === site.id).length,
+  }));
+  usage.sort((a, b) => a.count - b.count);
+  return usage[0].site;
+}
+
+export function getSiteRotationStatus(injections: AppData["injections"]) {
+  return INJECTION_SITES.map((site) => ({
+    ...site,
+    lastUsed: injections.find((i) => i.site === site.id)?.date ?? null,
+    count: injections.filter((i) => i.site === site.id).length,
+  }));
+}
+
+export function getWeightProgress(weights: AppData["weights"]) {
+  if (weights.length === 0) return null;
+  const sorted = [...weights].sort(
+    (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+  );
+  const first = sorted[0];
+  const latest = sorted[sorted.length - 1];
+  const change = latest.weight - first.weight;
+  return { first, latest, change, sorted };
+}
+
+export function getNutritionAverages(nutrition: AppData["nutrition"], days = 7) {
+  const cutoff = subDays(new Date(), days);
+  const recent = nutrition.filter((n) => parseISO(n.date) >= cutoff);
+  if (recent.length === 0) return null;
+  const totals = recent.reduce(
+    (acc, n) => ({
+      calories: acc.calories + n.calories,
+      protein: acc.protein + n.protein,
+      fiber: acc.fiber + n.fiber,
+      water: acc.water + n.water,
+    }),
+    { calories: 0, protein: 0, fiber: 0, water: 0 }
+  );
+  const count = recent.length;
+  return {
+    calories: Math.round(totals.calories / count),
+    protein: Math.round(totals.protein / count),
+    fiber: Math.round(totals.fiber / count),
+    water: Math.round(totals.water / count),
+    daysLogged: count,
+  };
+}
+
+export function analyzePatterns(data: AppData): PatternInsight[] {
+  const insights: PatternInsight[] = [];
+  const { injections, sideEffects, nutrition, weights, profile } = data;
+
+  // Side effects after dosage changes
+  const dosageChanges = injections.filter((i) => i.dosageChanged);
+  for (const change of dosageChanges.slice(0, 3)) {
+    const weekAfter = sideEffects.filter((s) => {
+      const diff = differenceInDays(parseISO(s.date), parseISO(change.date));
+      return diff >= 0 && diff <= 7;
+    });
+    const nauseaDays = weekAfter.filter((s) =>
+      s.effects.some((e) => e.type === "nausea" && e.severity >= 3)
+    );
+    if (nauseaDays.length >= 2) {
+      insights.push({
+        id: `dosage-nausea-${change.id}`,
+        type: "dosage",
+        title: "Nausea after dosage increase",
+        description: `You logged elevated nausea on ${nauseaDays.length} days within a week of your dosage change to ${change.dosage}${change.dosageUnit} on ${formatDate(change.date)}. This is common when titrating up.`,
+        severity: "watch",
+        relatedDates: nauseaDays.map((s) => s.date),
+      });
+    }
+  }
+
+  // Side effects near injection days
+  for (const injection of injections.slice(0, 4)) {
+    const dayOf = sideEffects.find((s) => s.date === injection.date);
+    const dayAfter = sideEffects.find(
+      (s) =>
+        differenceInDays(parseISO(s.date), parseISO(injection.date)) === 1
+    );
+    if (dayOf || dayAfter) {
+      const effects = [...(dayOf?.effects ?? []), ...(dayAfter?.effects ?? [])];
+      const significant = effects.filter((e) => e.severity >= 3);
+      if (significant.length >= 2) {
+        insights.push({
+          id: `injection-effects-${injection.id}`,
+          type: "side-effect",
+          title: "Symptoms near injection day",
+          description: `Notable side effects appeared around your ${formatDate(injection.date)} injection. Tracking meals and hydration on injection days may help.`,
+          severity: "info",
+          relatedDates: [injection.date],
+        });
+        break;
+      }
+    }
+  }
+
+  // Low protein correlation with fatigue
+  const lowProteinDays = nutrition.filter((n) => n.protein < (profile?.proteinGoal ?? 100) * 0.6);
+  for (const day of lowProteinDays.slice(0, 5)) {
+    const symptoms = sideEffects.find((s) => s.date === day.date);
+    const fatigue = symptoms?.effects.find(
+      (e) => (e.type === "fatigue" || e.type === "energy") && e.severity >= 3
+    );
+    if (fatigue) {
+      insights.push({
+        id: `protein-fatigue-${day.date}`,
+        type: "nutrition",
+        title: "Low protein & fatigue connection",
+        description: `On ${formatDate(day.date)}, protein intake was ${day.protein}g (below your goal) and fatigue was elevated. Prioritizing protein may help energy levels on GLP-1.`,
+        severity: "info",
+        relatedDates: [day.date],
+      });
+      break;
+    }
+  }
+
+  // Weight progress positive
+  const progress = getWeightProgress(weights);
+  if (progress && progress.change < -2 && weights.length >= 3) {
+    insights.push({
+      id: "weight-progress",
+      type: "weight",
+      title: "Steady progress on your journey",
+      description: `You've logged a ${Math.abs(progress.change).toFixed(1)} ${progress.latest.unit} change since ${formatDate(progress.first.date)}. Consistency with injections and nutrition is paying off.`,
+      severity: "positive",
+      relatedDates: [progress.first.date, progress.latest.date],
+    });
+  }
+
+  // Low fiber pattern
+  const avg = getNutritionAverages(nutrition, 14);
+  if (avg && avg.fiber < (profile?.fiberGoal ?? 25) * 0.7) {
+    insights.push({
+      id: "low-fiber",
+      type: "nutrition",
+      title: "Fiber intake below goal",
+      description: `Your average fiber over ${avg.daysLogged} days is ${avg.fiber}g vs your ${profile?.fiberGoal ?? 25}g goal. Increasing fiber gradually can help with GLP-1-related digestive changes.`,
+      severity: "watch",
+      relatedDates: [],
+    });
+  }
+
+  return insights.slice(0, 6);
+}
+
+export function generateMealPlan(
+  calorieGoal: number,
+  proteinGoal: number,
+  fiberGoal: number
+): DailyMealPlan {
+  const breakfast = MEAL_TEMPLATES.filter((m) => m.mealType === "breakfast");
+  const lunch = MEAL_TEMPLATES.filter((m) => m.mealType === "lunch");
+  const dinner = MEAL_TEMPLATES.filter((m) => m.mealType === "dinner");
+  const snacks = MEAL_TEMPLATES.filter((m) => m.mealType === "snack");
+
+  const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  const meals: MealPlanItem[] = [
+    { ...pick(breakfast), id: "b1" },
+    { ...pick(lunch), id: "l1" },
+    { ...pick(dinner), id: "d1" },
+    { ...pick(snacks), id: "s1" },
+  ];
+
+  let totalCalories = meals.reduce((s, m) => s + m.calories, 0);
+  let totalProtein = meals.reduce((s, m) => s + m.protein, 0);
+  let totalFiber = meals.reduce((s, m) => s + m.fiber, 0);
+
+  // Scale portions if over calorie goal
+  if (totalCalories > calorieGoal * 1.1) {
+    const factor = calorieGoal / totalCalories;
+    meals.forEach((m) => {
+      m.calories = Math.round(m.calories * factor);
+      m.protein = Math.round(m.protein * factor);
+      m.fiber = Math.round(m.fiber * factor);
+    });
+    totalCalories = meals.reduce((s, m) => s + m.calories, 0);
+    totalProtein = meals.reduce((s, m) => s + m.protein, 0);
+    totalFiber = meals.reduce((s, m) => s + m.fiber, 0);
+  }
+
+  return {
+    date: todayISO(),
+    meals,
+    totalCalories,
+    totalProtein,
+    totalFiber,
+  };
+}
+
+export function getTreatmentConsistency(
+  injections: AppData["injections"],
+  weeks = 8
+): { onTime: number; total: number; percentage: number } {
+  const expected = weeks;
+  const recent = injections.filter((i) => {
+    const diff = differenceInDays(new Date(), parseISO(i.date));
+    return diff <= weeks * 7;
+  });
+  const percentage =
+    expected > 0 ? Math.min(100, Math.round((recent.length / expected) * 100)) : 0;
+  return { onTime: recent.length, total: expected, percentage };
+}
+
+export function getDosageHistory(injections: AppData["injections"]) {
+  const changes: { date: string; dosage: number; unit: string }[] = [];
+  let lastDosage: number | null = null;
+  const sorted = [...injections].sort(
+    (a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()
+  );
+  for (const inj of sorted) {
+    if (lastDosage !== null && inj.dosage !== lastDosage) {
+      changes.push({
+        date: inj.date,
+        dosage: inj.dosage,
+        unit: inj.dosageUnit,
+      });
+    }
+    if (lastDosage === null) {
+      changes.push({
+        date: inj.date,
+        dosage: inj.dosage,
+        unit: inj.dosageUnit,
+      });
+    }
+    lastDosage = inj.dosage;
+  }
+  return changes;
+}
