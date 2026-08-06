@@ -128,6 +128,7 @@ export default function MealsPage() {
               variant="secondary"
               onClick={handleDownloadPdf}
               loading={downloading}
+              className="w-full sm:w-auto"
             >
               <Download className="w-4 h-4" />
               Download PDF
@@ -254,7 +255,7 @@ export default function MealsPage() {
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{meal.description}</p>
-                  <div className="flex gap-3 text-xs text-gray-500 mb-3">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mb-3">
                     <span>{meal.calories} kcal</span>
                     <span>{meal.protein}g protein</span>
                     <span>{meal.fiber}g fiber</span>

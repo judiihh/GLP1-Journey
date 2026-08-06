@@ -1,66 +1,65 @@
 "use client";
 
-import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useMemo, useState } from "react";
 import { useApp } from "@/hooks/useAppData";
 import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
 import { formatDate, todayISO } from "@/lib/utils";
-import { SIDE_EFFECTS, SEVERITY_LABELS } from "@/lib/constants";
-import type { SideEffectType, Severity } from "@/lib/types";
-import { CheckCircle2, HeartPulse } from "lucide-react";
+import { SEVERITY_LABELS } from "@/lib/constants";
+import { SymptomLogForm } from "@/components/symptoms/SymptomLogForm";
+import {
+  InjectionSymptomItem,
+  OtherSymptomDayItem,
+} from "@/components/symptoms/InjectionSymptomItem";
+import type { SideEffectLog } from "@/lib/types";
+import { CalendarDays, Syringe } from "lucide-react";
 
 export default function SymptomsPage() {
   const { data, logSideEffect } = useApp();
-  const { sideEffects } = data;
+  const { sideEffects, injections } = data;
+  const today = todayISO();
 
-  const existing = sideEffects.find((s) => s.date === todayISO());
-  const [effects, setEffects] = useState<
-    Record<SideEffectType, Severity>
-  >(
-    existing
-      ? Object.fromEntries(
-          existing.effects.map((e) => [e.type, e.severity])
-        ) as Record<SideEffectType, Severity>
-      : ({} as Record<SideEffectType, Severity>)
+  const [showOtherDayForm, setShowOtherDayForm] = useState<string | null>(null);
+
+  const todaySideEffect = sideEffects.find((s) => s.date === today);
+  const injectionDates = useMemo(
+    () => new Set(injections.map((i) => i.date)),
+    [injections]
   );
-  const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [saved, setSaved] = useState(false);
 
-  const setSeverity = (type: SideEffectType, severity: Severity) => {
-    setEffects((prev) => ({ ...prev, [type]: severity }));
+  const sortedInjections = useMemo(
+    () =>
+      [...injections].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
+    [injections]
+  );
+
+  const otherSymptomDays = useMemo(
+    () =>
+      sideEffects.filter(
+        (s) => !injectionDates.has(s.date) && s.date !== today
+      ),
+    [sideEffects, injectionDates, today]
+  );
+
+  const sideEffectByDate = useMemo(() => {
+    const map = new Map<string, SideEffectLog>();
+    for (const s of sideEffects) map.set(s.date, s);
+    return map;
+  }, [sideEffects]);
+
+  const handleSave = async (log: SideEffectLog) => {
+    await logSideEffect(log);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const activeEffects = Object.entries(effects)
-      .filter(([, severity]) => severity >= 1)
-      .map(([type, severity]) => ({
-        type: type as SideEffectType,
-        severity: severity as Severity,
-      }));
-
-    await logSideEffect({
-      id: existing?.id ?? uuidv4(),
-      date: todayISO(),
-      effects: activeEffects,
-      notes: notes || undefined,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  // Build chart data for most common symptoms
   const nauseaData = sideEffects
     .slice(0, 14)
     .reverse()
     .map((s) => ({
       date: formatDate(s.date, "MMM d"),
-      severity:
-        s.effects.find((e) => e.type === "nausea")?.severity ?? 0,
+      severity: s.effects.find((e) => e.type === "nausea")?.severity ?? 0,
     }));
 
   const fatigueData = sideEffects
@@ -68,80 +67,109 @@ export default function SymptomsPage() {
     .reverse()
     .map((s) => ({
       date: formatDate(s.date, "MMM d"),
-      severity:
-        s.effects.find((e) => e.type === "fatigue")?.severity ?? 0,
+      severity: s.effects.find((e) => e.type === "fatigue")?.severity ?? 0,
     }));
+
+  const todayHasInjection = injectionDates.has(today);
 
   return (
     <div>
       <PageHeader
         title="Symptoms"
-        subtitle="Track how you're feeling — patterns help you and your doctor"
+        subtitle="Log how you feel today and review symptoms around each injection"
       />
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        {/* Log form */}
-        <Card>
-          <CardHeader
-            title="How are you feeling today?"
-            subtitle={formatDate(todayISO(), "EEEE, MMM d")}
-          />
-          {saved ? (
-            <div className="flex flex-col items-center py-8 text-turquoise-500">
-              <CheckCircle2 className="w-12 h-12 mb-3" />
-              <p className="font-medium">Symptoms logged — take care of yourself 💜</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {SIDE_EFFECTS.map((symptom) => (
-                <div key={symptom.id}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span>{symptom.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {symptom.label}
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {SEVERITY_LABELS.map((label, level) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() =>
-                          setSeverity(symptom.id, level as Severity)
-                        }
-                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                          (effects[symptom.id] ?? 0) === level
-                            ? level === 0
-                              ? "bg-sage-200 text-sage-700"
-                              : level <= 2
-                                ? "bg-lavender-200 text-lavender-700"
-                                : level <= 3
-                                  ? "bg-rose-200 text-rose-700"
-                                  : "bg-rose-300 text-rose-800"
-                            : "bg-gray-50 text-gray-400 hover:bg-gray-100"
-                        }`}
-                      >
-                        {level === 0 ? "—" : level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              <Textarea
-                label="Additional notes"
-                rows={3}
-                placeholder="Anything else you'd like to remember about today?"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-              <Button type="submit" className="w-full">
-                {`Save today's symptoms`}
-              </Button>
-            </form>
-          )}
-        </Card>
+        <div className="space-y-6">
+          {/* Today — always available */}
+          <Card>
+            <CardHeader
+              title="Today"
+              subtitle={formatDate(today, "EEEE, MMM d")}
+            />
+            {todayHasInjection && (
+              <p className="text-xs text-lavender-600 bg-lavender-50 border border-lavender-100 rounded-lg px-3 py-2.5 mb-4 flex items-start gap-2 leading-relaxed">
+                <Syringe className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                Injection day — what you log here also shows in your injection history below.
+              </p>
+            )}
+            <SymptomLogForm
+              date={today}
+              existing={todaySideEffect}
+              onSave={handleSave}
+              submitLabel={
+                todaySideEffect ? "Update today's symptoms" : "Save today's symptoms"
+              }
+            />
+          </Card>
 
-        {/* Severity legend + charts */}
+          {/* Injection-linked history */}
+          <Card>
+            <CardHeader
+              title="Symptoms by injection"
+              subtitle="Tap an injection day to log or edit how you felt"
+            />
+            {sortedInjections.length === 0 ? (
+              <div className="text-center py-10 px-4">
+                <Syringe className="w-10 h-10 text-lavender-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-600">
+                  Log an injection first — your symptom history will be organized by injection date.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sortedInjections.map((injection) => (
+                  <InjectionSymptomItem
+                    key={injection.id}
+                    injection={injection}
+                    sideEffect={sideEffectByDate.get(injection.date)}
+                    onSave={handleSave}
+                    defaultOpen={false}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Other days (symptoms logged without injection on that day) */}
+          {otherSymptomDays.length > 0 && (
+            <Card>
+              <CardHeader
+                title="Other symptom days"
+                subtitle="Days you logged symptoms without an injection"
+              />
+              <div className="space-y-3">
+                {otherSymptomDays.map((entry) =>
+                  showOtherDayForm === entry.date ? (
+                    <Card key={entry.id} className="p-4 bg-lavender-50/30">
+                      <p className="text-sm font-medium text-gray-800 mb-3">
+                        {formatDate(entry.date, "EEEE, MMM d")}
+                      </p>
+                      <SymptomLogForm
+                        date={entry.date}
+                        existing={entry}
+                        onSave={async (log) => {
+                          await handleSave(log);
+                          setShowOtherDayForm(null);
+                        }}
+                        submitLabel="Update symptoms"
+                        compact
+                      />
+                    </Card>
+                  ) : (
+                    <OtherSymptomDayItem
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={() => setShowOtherDayForm(entry.date)}
+                    />
+                  )
+                )}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Charts + legend */}
         <div className="space-y-6">
           <Card>
             <CardHeader title="Severity guide" />
@@ -166,70 +194,42 @@ export default function SymptomsPage() {
           </Card>
 
           <Card>
-            <CardHeader title="Nausea trend" subtitle="Last 14 entries" />
-            <TrendChart
-              data={nauseaData}
-              dataKey="severity"
-              color="#ebb1cb"
-              type="bar"
+            <CardHeader
+              title="Nausea trend"
+              subtitle="Last 14 entries"
             />
+            {nauseaData.length > 0 ? (
+              <TrendChart
+                data={nauseaData}
+                dataKey="severity"
+                color="#ebb1cb"
+                type="bar"
+              />
+            ) : (
+              <p className="text-sm text-gray-500 py-6 text-center flex items-center justify-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Log symptoms to see trends
+              </p>
+            )}
           </Card>
 
           <Card>
             <CardHeader title="Fatigue trend" subtitle="Last 14 entries" />
-            <TrendChart
-              data={fatigueData}
-              dataKey="severity"
-              color="#a892d4"
-              type="bar"
-            />
+            {fatigueData.length > 0 ? (
+              <TrendChart
+                data={fatigueData}
+                dataKey="severity"
+                color="#a892d4"
+                type="bar"
+              />
+            ) : (
+              <p className="text-sm text-gray-500 py-6 text-center">
+                Log symptoms to see trends
+              </p>
+            )}
           </Card>
         </div>
       </div>
-
-      {/* Recent log */}
-      {sideEffects.length > 0 && (
-        <Card>
-          <CardHeader title="Recent symptom logs" />
-          <div className="space-y-3">
-            {sideEffects.slice(0, 7).map((entry) => (
-              <div
-                key={entry.id}
-                className="p-4 rounded-xl bg-lavender-50/50"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm text-gray-800">
-                    {formatDate(entry.date, "EEEE, MMM d")}
-                  </span>
-                  <HeartPulse className="w-4 h-4 text-lavender-400" />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {entry.effects.map((e) => {
-                    const label = SIDE_EFFECTS.find((s) => s.id === e.type)?.label;
-                    return (
-                      <span
-                        key={e.type}
-                        className={`text-xs px-2.5 py-1 rounded-full ${
-                          e.severity >= 4
-                            ? "bg-rose-100 text-rose-700"
-                            : e.severity >= 2
-                              ? "bg-lavender-100 text-lavender-700"
-                              : "bg-sage-100 text-sage-700"
-                        }`}
-                      >
-                        {label}: {SEVERITY_LABELS[e.severity]}
-                      </span>
-                    );
-                  })}
-                </div>
-                {entry.notes && (
-                  <p className="text-xs text-gray-500 mt-2">{entry.notes}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

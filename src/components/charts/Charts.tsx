@@ -77,7 +77,11 @@ export function TrendChart({
       {type === "bar" ? (
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
-          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <XAxis
+            dataKey={xKey}
+            tick={{ fontSize: 10, fill: "#9ca3af" }}
+            interval={data.length > 8 ? Math.ceil(data.length / 7) - 1 : 0}
+          />
           <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
           <Tooltip content={<CustomTooltip />} />
           <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
