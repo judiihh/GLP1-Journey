@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useApp } from "@/hooks/useAppData";
 import { getDaysUntilInjection, getMedicationLabel, formatDate } from "@/lib/utils";
+import { isReminderSoundEnabled, playReminderChime } from "@/lib/reminder-sound";
 
 export function useReminders() {
   const { data } = useApp();
@@ -35,6 +36,9 @@ export function useReminders() {
             : `Your ${med} injection is in ${daysUntil} day${daysUntil > 1 ? "s" : ""} (${dateLabel}).`,
         icon: "/icon.svg",
       });
+      if (isReminderSoundEnabled()) {
+        void playReminderChime();
+      }
       notifiedRef.current = key;
     };
 

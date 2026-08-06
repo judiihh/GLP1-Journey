@@ -10,6 +10,12 @@ import { Input, Select } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 import { testConnection } from "@/lib/supabase/data";
 import { requestNotificationPermission } from "@/hooks/useReminders";
+import {
+  isReminderSoundEnabled,
+  playReminderChime,
+  setReminderSoundEnabled,
+  unlockReminderAudio,
+} from "@/lib/reminder-sound";
 import { MEDICATIONS } from "@/lib/constants";
 import { DIETARY_EXCLUSION_OPTIONS } from "@/lib/dietary-preferences";
 import type { GLP1Medication } from "@/lib/types";
@@ -57,6 +63,7 @@ export default function SettingsPage() {
   const [reminderDays, setReminderDays] = useState(
     String(reminders.daysBefore)
   );
+  const [reminderSound, setReminderSound] = useState(isReminderSoundEnabled);
   const [saved, setSaved] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -94,10 +101,24 @@ export default function SettingsPage() {
   };
 
   const handleEnableNotifications = async () => {
+    await unlockReminderAudio();
     const perm = await requestNotificationPermission();
     if (perm === "granted") {
       setReminderEnabled(true);
+      if (reminderSound) {
+        await playReminderChime();
+      }
     }
+  };
+
+  const handleTestReminderSound = async () => {
+    await unlockReminderAudio();
+    await playReminderChime();
+  };
+
+  const handleReminderSoundToggle = (enabled: boolean) => {
+    setReminderSound(enabled);
+    setReminderSoundEnabled(enabled);
   };
 
   const handleReset = async () => {
@@ -307,9 +328,32 @@ export default function SettingsPage() {
                 { value: "2", label: "2 days before" },
               ]}
             />
-            <Button variant="outline" onClick={handleEnableNotifications} className="w-full">
-              <Bell className="w-4 h-4" /> Enable browser notifications
-            </Button>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={reminderSound}
+                onChange={(e) => handleReminderSoundToggle(e.target.checked)}
+                className="rounded border-lavender-300 w-4 h-4"
+              />
+              <span className="text-sm text-gray-700">Play bell chime with reminders</span>
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={handleEnableNotifications} className="w-full sm:flex-1">
+                <Bell className="w-4 h-4" /> Enable browser notifications
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTestReminderSound}
+                className="w-full sm:flex-1"
+                disabled={!reminderSound}
+              >
+                Test chime
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              On mobile, tap <strong>Test chime</strong> once so your browser allows sound.
+              The chime plays when the app is open and a reminder is due.
+            </p>
           </div>
         </Card>
 
