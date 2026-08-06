@@ -49,6 +49,9 @@ export interface UserProfile {
   fiberGoal: number;
   waterGoal: number; // oz or ml
   waterUnit: "oz" | "ml";
+  excludeShellfish?: boolean;
+  excludePork?: boolean;
+  excludeDuck?: boolean;
   onboardingComplete: boolean;
   createdAt: string;
 }
@@ -138,7 +141,7 @@ export interface PatternInsight {
 export interface MealPlanItem {
   id: string;
   name: string;
-  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  mealType: "breakfast" | "lunch" | "dinner" | "morning-snack" | "afternoon-snack";
   calories: number;
   protein: number;
   fiber: number;

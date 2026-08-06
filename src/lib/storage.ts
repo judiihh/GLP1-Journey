@@ -1,6 +1,7 @@
 "use client";
 
 import type { AppData, ReminderSettings, UserProfile } from "./types";
+import { withProfileDefaults } from "./dietary-preferences";
 
 const STORAGE_KEY = "glp1-tracker-data";
 
@@ -25,7 +26,11 @@ export function loadData(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultData;
-    return { ...defaultData, ...JSON.parse(raw) };
+    const data = { ...defaultData, ...JSON.parse(raw) } as AppData;
+    if (data.profile) {
+      data.profile = withProfileDefaults(data.profile);
+    }
+    return data;
   } catch {
     return defaultData;
   }

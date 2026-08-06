@@ -10,6 +10,7 @@ import type {
   UserProfile,
   WeightLog,
 } from "@/lib/types";
+import { withProfileDefaults } from "@/lib/dietary-preferences";
 
 const defaultReminders: ReminderSettings = {
   enabled: true,
@@ -36,6 +37,9 @@ interface ProfileRow {
   fiber_goal: number;
   water_goal: number;
   water_unit: string;
+  exclude_shellfish: boolean | null;
+  exclude_pork: boolean | null;
+  exclude_duck: boolean | null;
   onboarding_complete: boolean;
   created_at: string;
 }
@@ -118,7 +122,7 @@ interface MealPlanRow {
 // --- Mappers ---
 
 function mapProfile(row: ProfileRow): UserProfile {
-  return {
+  return withProfileDefaults({
     id: row.id,
     name: row.name,
     medication: row.medication as UserProfile["medication"],
@@ -135,9 +139,12 @@ function mapProfile(row: ProfileRow): UserProfile {
     fiberGoal: row.fiber_goal,
     waterGoal: row.water_goal,
     waterUnit: row.water_unit as UserProfile["waterUnit"],
+    excludeShellfish: row.exclude_shellfish ?? undefined,
+    excludePork: row.exclude_pork ?? undefined,
+    excludeDuck: row.exclude_duck ?? undefined,
     onboardingComplete: row.onboarding_complete,
     createdAt: row.created_at,
-  };
+  });
 }
 
 function profileToRow(profile: UserProfile) {
@@ -158,6 +165,9 @@ function profileToRow(profile: UserProfile) {
     fiber_goal: profile.fiberGoal,
     water_goal: profile.waterGoal,
     water_unit: profile.waterUnit,
+    exclude_shellfish: profile.excludeShellfish ?? true,
+    exclude_pork: profile.excludePork ?? true,
+    exclude_duck: profile.excludeDuck ?? true,
     onboarding_complete: profile.onboardingComplete,
   };
 }

@@ -17,6 +17,7 @@ import type {
   UserProfile,
 } from "./types";
 import { INJECTION_SITES, MEAL_TEMPLATES, MEDICATIONS } from "./constants";
+import { mealPlanTotals, scaleMealsToCalorieGoal } from "./meal-plan-shared";
 
 export function formatDate(date: string | Date, fmt = "MMM d, yyyy"): string {
   const d = typeof date === "string" ? parseISO(date) : date;
@@ -312,36 +313,31 @@ export function generateMealPlan(
 
   const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
+  const pickTwoDifferent = <T,>(arr: T[]): [T, T] => {
+    if (arr.length <= 1) return [pick(arr), pick(arr)];
+    const first = pick(arr);
+    let second = pick(arr);
+    while (second === first) second = pick(arr);
+    return [first, second];
+  };
+
+  const [morningSnack, afternoonSnack] = pickTwoDifferent(snacks);
+
   const meals: MealPlanItem[] = [
-    { ...pick(breakfast), id: "b1" },
-    { ...pick(lunch), id: "l1" },
-    { ...pick(dinner), id: "d1" },
-    { ...pick(snacks), id: "s1" },
+    { ...pick(breakfast), id: "b1", mealType: "breakfast" },
+    { ...morningSnack, id: "s1", mealType: "morning-snack" },
+    { ...pick(lunch), id: "l1", mealType: "lunch" },
+    { ...afternoonSnack, id: "s2", mealType: "afternoon-snack" },
+    { ...pick(dinner), id: "d1", mealType: "dinner" },
   ];
 
-  let totalCalories = meals.reduce((s, m) => s + m.calories, 0);
-  let totalProtein = meals.reduce((s, m) => s + m.protein, 0);
-  let totalFiber = meals.reduce((s, m) => s + m.fiber, 0);
-
-  // Scale portions if over calorie goal
-  if (totalCalories > calorieGoal * 1.1) {
-    const factor = calorieGoal / totalCalories;
-    meals.forEach((m) => {
-      m.calories = Math.round(m.calories * factor);
-      m.protein = Math.round(m.protein * factor);
-      m.fiber = Math.round(m.fiber * factor);
-    });
-    totalCalories = meals.reduce((s, m) => s + m.calories, 0);
-    totalProtein = meals.reduce((s, m) => s + m.protein, 0);
-    totalFiber = meals.reduce((s, m) => s + m.fiber, 0);
-  }
+  const scaled = scaleMealsToCalorieGoal(meals, calorieGoal);
+  const totals = mealPlanTotals(scaled);
 
   return {
     date: todayISO(),
-    meals,
-    totalCalories,
-    totalProtein,
-    totalFiber,
+    meals: scaled,
+    ...totals,
   };
 }
 

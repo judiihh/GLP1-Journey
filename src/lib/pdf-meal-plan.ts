@@ -2,14 +2,8 @@
 
 import { jsPDF } from "jspdf";
 import type { DailyMealPlan, UserProfile } from "./types";
+import { MEAL_TYPE_LABELS } from "./meal-plan-shared";
 import { formatDate } from "./utils";
-
-const MEAL_LABELS: Record<DailyMealPlan["meals"][0]["mealType"], string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snack",
-};
 
 function ensureSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -89,7 +83,7 @@ export async function generateMealPlanPdf(
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(120, 100, 160);
-    doc.text(MEAL_LABELS[meal.mealType].toUpperCase(), margin + 4, y + 1);
+    doc.text(MEAL_TYPE_LABELS[meal.mealType].toUpperCase(), margin + 4, y + 1);
     y += 10;
 
     doc.setTextColor(40, 40, 40);

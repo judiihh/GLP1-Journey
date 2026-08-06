@@ -52,6 +52,9 @@ export function Onboarding() {
       fiberGoal: DEFAULT_PROFILE.fiberGoal,
       waterGoal: DEFAULT_PROFILE.waterGoal,
       waterUnit: DEFAULT_PROFILE.waterUnit,
+      excludeShellfish: DEFAULT_PROFILE.excludeShellfish,
+      excludePork: DEFAULT_PROFILE.excludePork,
+      excludeDuck: DEFAULT_PROFILE.excludeDuck,
       onboardingComplete: true,
       createdAt: new Date().toISOString(),
     });

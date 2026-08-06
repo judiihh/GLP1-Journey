@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { testConnection } from "@/lib/supabase/data";
 import { requestNotificationPermission } from "@/hooks/useReminders";
 import { MEDICATIONS } from "@/lib/constants";
+import { DIETARY_EXCLUSION_OPTIONS } from "@/lib/dietary-preferences";
 import type { GLP1Medication } from "@/lib/types";
 import { defaultNextInjectionDate } from "@/lib/utils";
 import { getDay, parseISO } from "date-fns";
@@ -47,6 +48,11 @@ export default function SettingsPage() {
   const [goalWeight, setGoalWeight] = useState(
     String(profile?.goalWeight ?? "")
   );
+  const [excludeShellfish, setExcludeShellfish] = useState(
+    profile?.excludeShellfish ?? true
+  );
+  const [excludePork, setExcludePork] = useState(profile?.excludePork ?? true);
+  const [excludeDuck, setExcludeDuck] = useState(profile?.excludeDuck ?? true);
   const [reminderEnabled, setReminderEnabled] = useState(reminders.enabled);
   const [reminderDays, setReminderDays] = useState(
     String(reminders.daysBefore)
@@ -74,6 +80,9 @@ export default function SettingsPage() {
       fiberGoal: parseInt(fiberGoal),
       waterGoal: parseInt(waterGoal),
       goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
+      excludeShellfish,
+      excludePork,
+      excludeDuck,
     });
     await setReminders({
       enabled: reminderEnabled,
@@ -221,6 +230,54 @@ export default function SettingsPage() {
                 onChange={(e) => setWaterGoal(e.target.value)}
               />
             </div>
+          </div>
+        </Card>
+
+        {/* Meal preferences */}
+        <Card>
+          <CardHeader
+            title="Meal preferences"
+            subtitle="Ingredients to avoid in AI-generated meal plans"
+          />
+          <div className="space-y-3">
+            {DIETARY_EXCLUSION_OPTIONS.map((option) => {
+              const checked =
+                option.key === "excludeShellfish"
+                  ? excludeShellfish
+                  : option.key === "excludePork"
+                    ? excludePork
+                    : excludeDuck;
+              const setChecked =
+                option.key === "excludeShellfish"
+                  ? setExcludeShellfish
+                  : option.key === "excludePork"
+                    ? setExcludePork
+                    : setExcludeDuck;
+
+              return (
+                <label
+                  key={option.key}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-rose-50/50 border border-rose-100/80 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => setChecked(e.target.checked)}
+                    className="rounded border-lavender-300 w-4 h-4 mt-0.5 shrink-0"
+                  />
+                  <span>
+                    <span className="text-sm font-medium text-gray-800 block">
+                      {option.label}
+                    </span>
+                    <span className="text-xs text-gray-500">{option.description}</span>
+                  </span>
+                </label>
+              );
+            })}
+            <p className="text-xs text-gray-500 pt-1">
+              Quick plans use your curated favorites and are not affected by these
+              toggles.
+            </p>
           </div>
         </Card>
 

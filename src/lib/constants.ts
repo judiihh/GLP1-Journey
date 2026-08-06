@@ -144,6 +144,9 @@ export const DEFAULT_PROFILE = {
   currentDosage: 0.25,
   injectionDay: 0,
   injectionTime: "09:00",
+  excludeShellfish: true,
+  excludePork: true,
+  excludeDuck: true,
 };
 
 export const MEAL_TEMPLATES = [

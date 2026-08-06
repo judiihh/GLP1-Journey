@@ -23,6 +23,9 @@ create table if not exists public.profiles (
   fiber_goal integer not null default 25,
   water_goal integer not null default 64,
   water_unit text not null default 'oz' check (water_unit in ('oz', 'ml')),
+  exclude_shellfish boolean not null default true,
+  exclude_pork boolean not null default true,
+  exclude_duck boolean not null default true,
   onboarding_complete boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -374,3 +377,8 @@ create policy "Users can delete own assistant messages"
 -- create policy "Users can view own assistant messages" on public.assistant_messages for select using (auth.uid() = user_id);
 -- create policy "Users can insert own assistant messages" on public.assistant_messages for insert with check (auth.uid() = user_id);
 -- create policy "Users can delete own assistant messages" on public.assistant_messages for delete using (auth.uid() = user_id);
+--
+-- Dietary exclusions for AI meal plans (safe to re-run):
+-- alter table public.profiles add column if not exists exclude_shellfish boolean not null default true;
+-- alter table public.profiles add column if not exists exclude_pork boolean not null default true;
+-- alter table public.profiles add column if not exists exclude_duck boolean not null default true;
