@@ -8,7 +8,7 @@ import type {
 import type { UserProfile } from "./types";
 import { getMedicationLabel } from "./utils";
 
-export const FOOD_VISION_MODEL = "llama-3.2-11b-vision-preview";
+export const FOOD_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 function num(value: unknown): number {
   const n = Number(value);

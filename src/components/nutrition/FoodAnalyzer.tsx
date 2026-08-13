@@ -14,7 +14,8 @@ interface FoodAnalyzerProps {
 }
 
 export function FoodAnalyzer({ profile, onConfirm }: FoodAnalyzerProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<FoodAnalysisResult | null>(null);
@@ -27,7 +28,8 @@ export function FoodAnalyzer({ profile, onConfirm }: FoodAnalyzerProps) {
     setSelectedFile(null);
     setAnalysis(null);
     setError(null);
-    if (inputRef.current) inputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
   };
 
   const handleFile = (file: File | null) => {
@@ -101,11 +103,20 @@ export function FoodAnalyzer({ profile, onConfirm }: FoodAnalyzerProps) {
         </div>
       </div>
 
+      {/* Camera — capture attribute opens camera on mobile */}
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
+      {/* Gallery — no capture attribute opens photo picker on mobile */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
       />
@@ -114,7 +125,7 @@ export function FoodAnalyzer({ profile, onConfirm }: FoodAnalyzerProps) {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => cameraInputRef.current?.click()}
             className="p-4 rounded-xl border-2 border-dashed border-lavender-200 hover:border-lavender-400 hover:bg-lavender-50/50 transition-all text-center touch-manipulation"
           >
             <Camera className="w-6 h-6 mx-auto text-lavender-400 mb-2" />
@@ -122,7 +133,7 @@ export function FoodAnalyzer({ profile, onConfirm }: FoodAnalyzerProps) {
           </button>
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => galleryInputRef.current?.click()}
             className="p-4 rounded-xl border-2 border-dashed border-lavender-200 hover:border-lavender-400 hover:bg-lavender-50/50 transition-all text-center touch-manipulation"
           >
             <ImagePlus className="w-6 h-6 mx-auto text-lavender-400 mb-2" />
