@@ -21,6 +21,8 @@ import {
   deleteWeight as supabaseDeleteWeight,
   updateInjection as supabaseUpdateInjection,
   upsertNutrition,
+  updateNutrition as supabaseUpdateNutrition,
+  deleteNutrition as supabaseDeleteNutrition,
   upsertProfile,
   upsertReminders,
   upsertSideEffect,
@@ -30,6 +32,8 @@ import {
   addInjection as localAddInjection,
   addMeasurement as localAddMeasurement,
   addNutrition as localAddNutrition,
+  updateNutrition as localUpdateNutrition,
+  deleteNutrition as localDeleteNutrition,
   addSideEffect as localAddSideEffect,
   addWeight as localAddWeight,
   updateWeight as localUpdateWeight,
@@ -51,6 +55,11 @@ interface AppContextValue {
   updateInjection: (injection: AppData["injections"][0]) => Promise<void>;
   deleteInjection: (id: string) => Promise<void>;
   logNutrition: (log: AppData["nutrition"][0]) => Promise<void>;
+  updateNutrition: (
+    log: AppData["nutrition"][0],
+    previousDate: string
+  ) => Promise<void>;
+  deleteNutrition: (id: string) => Promise<void>;
   logWeight: (log: AppData["weights"][0]) => Promise<void>;
   updateWeight: (log: AppData["weights"][0]) => Promise<void>;
   deleteWeight: (id: string) => Promise<void>;
@@ -244,6 +253,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               idx >= 0
                 ? prev.nutrition.map((n, i) => (i === idx ? saved : n))
                 : [saved, ...prev.nutrition];
+            nutrition.sort((a, b) => b.date.localeCompare(a.date));
             return { ...prev, nutrition };
           });
         } else {
@@ -251,6 +261,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to log nutrition");
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const updateNutrition = useCallback(
+    async (log: AppData["nutrition"][0], previousDate: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await supabaseUpdateNutrition(
+            supabase,
+            user.id,
+            log,
+            previousDate
+          );
+          setData((prev) => {
+            const nutrition = prev.nutrition
+              .filter((n) => n.id !== log.id)
+              .filter((n) => n.date !== saved.date);
+            nutrition.unshift(saved);
+            nutrition.sort((a, b) => b.date.localeCompare(a.date));
+            return { ...prev, nutrition };
+          });
+        } else {
+          setData(localUpdateNutrition(log, previousDate));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update nutrition"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const deleteNutrition = useCallback(
+    async (id: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          await supabaseDeleteNutrition(supabase, user.id, id);
+          setData((prev) => ({
+            ...prev,
+            nutrition: prev.nutrition.filter((n) => n.id !== id),
+          }));
+        } else {
+          setData(localDeleteNutrition(id));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to delete nutrition"
+        );
         throw err;
       } finally {
         setIsSaving(false);
@@ -453,6 +524,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateInjection,
         deleteInjection,
         logNutrition,
+        updateNutrition,
+        deleteNutrition,
         logWeight,
         updateWeight,
         deleteWeight,

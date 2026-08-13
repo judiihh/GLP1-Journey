@@ -84,6 +84,33 @@ export function addNutrition(log: AppData["nutrition"][0]): AppData {
   } else {
     data.nutrition.unshift(log);
   }
+  data.nutrition.sort((a, b) => b.date.localeCompare(a.date));
+  saveData(data);
+  return data;
+}
+
+export function updateNutrition(
+  log: AppData["nutrition"][0],
+  previousDate: string
+): AppData {
+  const data = loadData();
+  if (previousDate !== log.date) {
+    data.nutrition = data.nutrition.filter((n) => n.id !== log.id);
+  }
+  const existing = data.nutrition.findIndex((n) => n.date === log.date);
+  if (existing >= 0) {
+    data.nutrition[existing] = log;
+  } else {
+    data.nutrition.unshift(log);
+  }
+  data.nutrition.sort((a, b) => b.date.localeCompare(a.date));
+  saveData(data);
+  return data;
+}
+
+export function deleteNutrition(id: string): AppData {
+  const data = loadData();
+  data.nutrition = data.nutrition.filter((n) => n.id !== id);
   saveData(data);
   return data;
 }

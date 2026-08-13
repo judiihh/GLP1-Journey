@@ -437,6 +437,32 @@ export async function upsertNutrition(
   return mapNutrition(data as NutritionRow);
 }
 
+export async function updateNutrition(
+  supabase: SupabaseClient,
+  userId: string,
+  log: NutritionLog,
+  previousDate: string
+): Promise<NutritionLog> {
+  if (previousDate !== log.date) {
+    await deleteNutrition(supabase, userId, log.id);
+  }
+  return upsertNutrition(supabase, userId, log);
+}
+
+export async function deleteNutrition(
+  supabase: SupabaseClient,
+  userId: string,
+  nutritionId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("nutrition_logs")
+    .delete()
+    .eq("id", nutritionId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
 export async function insertWeight(
   supabase: SupabaseClient,
   userId: string,
