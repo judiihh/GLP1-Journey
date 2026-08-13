@@ -3,6 +3,7 @@ import { APP_BRAND } from "@/lib/brand-icon-art";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: APP_BRAND.name,
     short_name: APP_BRAND.shortName,
     description:
@@ -15,28 +16,22 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: APP_BRAND.themeColor,
     icons: [
       {
-        src: "/icon?id=192",
+        src: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon?id=512",
+        src: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon?id=512",
+        src: "/icons/icon-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
-      },
-      {
-        src: "/apple-icon",
-        sizes: "180x180",
-        type: "image/png",
-        purpose: "any",
       },
     ],
   };
