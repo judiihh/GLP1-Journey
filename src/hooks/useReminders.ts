@@ -34,7 +34,7 @@ export function useReminders() {
           daysUntil === 0
             ? `Today is your ${med} injection day!`
             : `Your ${med} injection is in ${daysUntil} day${daysUntil > 1 ? "s" : ""} (${dateLabel}).`,
-        icon: "/icon.svg",
+        icon: "/apple-icon",
       });
       if (isReminderSoundEnabled()) {
         void playReminderChime();
