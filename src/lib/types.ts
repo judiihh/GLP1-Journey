@@ -79,7 +79,6 @@ export interface NutritionLog {
   carbs?: number;
   fat?: number;
   notes?: string;
-  mealBreakdown?: import("./food-analyze-types").MealBreakdown;
 }
 
 export interface WeightLog {

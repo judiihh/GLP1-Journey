@@ -10,30 +10,11 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { ProgressBar } from "@/components/ui/Progress";
 import { TrendChart } from "@/components/charts/Charts";
 import { NutritionHistoryItem } from "@/components/nutrition/NutritionHistoryItem";
-import { FoodAnalyzer } from "@/components/nutrition/FoodAnalyzer";
-import { FoodAnalysisReviewCompact } from "@/components/nutrition/FoodAnalysisReview";
 import { formatDate, getNutritionAverages, todayISO } from "@/lib/utils";
-import {
-  formatFoodNotesFromItems,
-  mergeMealBreakdown,
-} from "@/lib/food-analyze-utils";
-import type { FoodAnalysisResult, MealBreakdown } from "@/lib/food-analyze-types";
 import { CheckCircle2, Flame, Beef, Wheat, Droplets, Apple } from "lucide-react";
 
 function emptyForm() {
-  return {
-    calories: "",
-    protein: "",
-    fiber: "",
-    carbs: "",
-    fat: "",
-    water: "",
-    notes: "",
-  };
-}
-
-function parseNum(value: string): number {
-  return parseInt(value) || 0;
+  return { calories: "", protein: "", fiber: "", water: "", notes: "" };
 }
 
 export default function NutritionPage() {
@@ -44,9 +25,6 @@ export default function NutritionPage() {
   const today = todayISO();
   const [logDate, setLogDate] = useState(today);
   const [form, setForm] = useState(emptyForm);
-  const [mealBreakdown, setMealBreakdown] = useState<MealBreakdown | null>(
-    null
-  );
   const [saved, setSaved] = useState(false);
 
   const existingForDate = nutrition.find((n) => n.date === logDate);
@@ -64,48 +42,26 @@ export default function NutritionPage() {
         calories: String(entry.calories),
         protein: String(entry.protein),
         fiber: String(entry.fiber),
-        carbs: String(entry.carbs ?? ""),
-        fat: String(entry.fat ?? ""),
         water: String(entry.water),
         notes: entry.notes ?? "",
       });
-      setMealBreakdown(entry.mealBreakdown ?? null);
     } else {
       setForm(emptyForm());
-      setMealBreakdown(null);
     }
   }, [logDate, nutrition]);
 
   if (!profile) return null;
-
-  const handleAnalyzerConfirm = (analysis: FoodAnalysisResult) => {
-    setForm((prev) => ({
-      calories: String(parseNum(prev.calories) + analysis.totals.calories),
-      protein: String(parseNum(prev.protein) + analysis.totals.protein),
-      fiber: String(parseNum(prev.fiber) + analysis.totals.fiber),
-      carbs: String(parseNum(prev.carbs) + analysis.totals.carbs),
-      fat: String(parseNum(prev.fat) + analysis.totals.fat),
-      water: prev.water,
-      notes: [prev.notes, formatFoodNotesFromItems(analysis.items)]
-        .filter(Boolean)
-        .join(prev.notes ? "\n" : ""),
-    }));
-    setMealBreakdown((prev) => mergeMealBreakdown(prev, analysis));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await logNutrition({
       id: existingForDate?.id ?? uuidv4(),
       date: logDate,
-      calories: parseNum(form.calories),
-      protein: parseNum(form.protein),
-      fiber: parseNum(form.fiber),
-      carbs: parseNum(form.carbs) || undefined,
-      fat: parseNum(form.fat) || undefined,
-      water: parseNum(form.water),
+      calories: parseInt(form.calories) || 0,
+      protein: parseInt(form.protein) || 0,
+      fiber: parseInt(form.fiber) || 0,
+      water: parseInt(form.water) || 0,
       notes: form.notes || undefined,
-      mealBreakdown: mealBreakdown ?? undefined,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -228,98 +184,67 @@ export default function NutritionPage() {
               <p className="font-medium">Nutrition saved!</p>
             </div>
           ) : (
-            <>
-              <FoodAnalyzer
-                profile={profile}
-                onConfirm={handleAnalyzerConfirm}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Date"
+                type="date"
+                value={logDate}
+                max={today}
+                onChange={(e) => setLogDate(e.target.value)}
               />
-              {mealBreakdown && mealBreakdown.items.length > 0 && (
-                <div className="mb-4">
-                  <FoodAnalysisReviewCompact
-                    itemCount={mealBreakdown.items.length}
-                  />
-                </div>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Date"
-                  type="date"
-                  value={logDate}
-                  max={today}
-                  onChange={(e) => setLogDate(e.target.value)}
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Calories"
-                    type="number"
-                    placeholder="0"
-                    value={form.calories}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, calories: e.target.value }))
-                    }
-                  />
-                  <Input
-                    label="Protein (g)"
-                    type="number"
-                    placeholder="0"
-                    value={form.protein}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, protein: e.target.value }))
-                    }
-                  />
-                  <Input
-                    label="Carbs (g)"
-                    type="number"
-                    placeholder="0"
-                    value={form.carbs}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, carbs: e.target.value }))
-                    }
-                  />
-                  <Input
-                    label="Fat (g)"
-                    type="number"
-                    placeholder="0"
-                    value={form.fat}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, fat: e.target.value }))
-                    }
-                  />
-                  <Input
-                    label="Fiber (g)"
-                    type="number"
-                    placeholder="0"
-                    value={form.fiber}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, fiber: e.target.value }))
-                    }
-                  />
-                  <Input
-                    label={`Water (${profile.waterUnit})`}
-                    type="number"
-                    placeholder="0"
-                    value={form.water}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, water: e.target.value }))
-                    }
-                  />
-                </div>
-                <Textarea
-                  label="Notes"
-                  rows={2}
-                  placeholder="What did you eat today? How was your appetite?"
-                  value={form.notes}
+                  label="Calories"
+                  type="number"
+                  placeholder="0"
+                  value={form.calories}
                   onChange={(e) =>
-                    setForm((prev) => ({ ...prev, notes: e.target.value }))
+                    setForm((prev) => ({ ...prev, calories: e.target.value }))
                   }
                 />
-                <Button type="submit" className="w-full" loading={isSaving}>
-                  {existingForDate
-                    ? "Update nutrition log"
-                    : "Save nutrition log"}
-                </Button>
-              </form>
-            </>
+                <Input
+                  label="Protein (g)"
+                  type="number"
+                  placeholder="0"
+                  value={form.protein}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, protein: e.target.value }))
+                  }
+                />
+                <Input
+                  label="Fiber (g)"
+                  type="number"
+                  placeholder="0"
+                  value={form.fiber}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, fiber: e.target.value }))
+                  }
+                />
+                <Input
+                  label={`Water (${profile.waterUnit})`}
+                  type="number"
+                  placeholder="0"
+                  value={form.water}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, water: e.target.value }))
+                  }
+                />
+              </div>
+              <Textarea
+                label="Notes"
+                rows={2}
+                placeholder="What did you eat today? How was your appetite?"
+                value={form.notes}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
+              />
+              <Button type="submit" className="w-full" loading={isSaving}>
+                {existingForDate
+                  ? "Update nutrition log"
+                  : "Save nutrition log"}
+              </Button>
+            </form>
           )}
         </Card>
 

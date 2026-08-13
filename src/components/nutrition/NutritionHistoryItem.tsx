@@ -27,8 +27,6 @@ export function NutritionHistoryItem({
   const [calories, setCalories] = useState(String(log.calories));
   const [protein, setProtein] = useState(String(log.protein));
   const [fiber, setFiber] = useState(String(log.fiber));
-  const [carbs, setCarbs] = useState(String(log.carbs ?? ""));
-  const [fat, setFat] = useState(String(log.fat ?? ""));
   const [water, setWater] = useState(String(log.water));
   const [notes, setNotes] = useState(log.notes ?? "");
 
@@ -37,8 +35,6 @@ export function NutritionHistoryItem({
     setCalories(String(log.calories));
     setProtein(String(log.protein));
     setFiber(String(log.fiber));
-    setCarbs(String(log.carbs ?? ""));
-    setFat(String(log.fat ?? ""));
     setWater(String(log.water));
     setNotes(log.notes ?? "");
   };
@@ -51,8 +47,6 @@ export function NutritionHistoryItem({
         calories: parseInt(calories) || 0,
         protein: parseInt(protein) || 0,
         fiber: parseInt(fiber) || 0,
-        carbs: parseInt(carbs) || undefined,
-        fat: parseInt(fat) || undefined,
         water: parseInt(water) || 0,
         notes: notes || undefined,
       },
@@ -119,18 +113,6 @@ export function NutritionHistoryItem({
             onChange={(e) => setFiber(e.target.value)}
           />
           <Input
-            label="Carbs (g)"
-            type="number"
-            value={carbs}
-            onChange={(e) => setCarbs(e.target.value)}
-          />
-          <Input
-            label="Fat (g)"
-            type="number"
-            value={fat}
-            onChange={(e) => setFat(e.target.value)}
-          />
-          <Input
             label={`Water (${profile.waterUnit})`}
             type="number"
             value={water}
@@ -173,21 +155,10 @@ export function NutritionHistoryItem({
           <div className="min-w-0 flex-1">
             <p className="font-medium text-sm text-gray-800">
               {log.calories} kcal · {log.protein}g protein
-              {log.mealBreakdown && (
-                <span className="ml-2 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-lavender-100 text-lavender-600">
-                  AI est.
-                </span>
-              )}
             </p>
             <p className="text-xs text-gray-500">
-              {formatDate(log.date)} · {log.fiber}g fiber
-              {(log.carbs != null || log.fat != null) && (
-                <>
-                  {" "}
-                  · {log.carbs ?? 0}g carbs · {log.fat ?? 0}g fat
-                </>
-              )}{" "}
-              · {log.water} {profile.waterUnit} water
+              {formatDate(log.date)} · {log.fiber}g fiber · {log.water}{" "}
+              {profile.waterUnit} water
             </p>
           </div>
         </div>
@@ -212,21 +183,6 @@ export function NutritionHistoryItem({
           </button>
         </div>
       </div>
-
-      {log.mealBreakdown && log.mealBreakdown.items.length > 0 && (
-        <div className="mt-2 ml-[52px] space-y-1">
-          {log.mealBreakdown.items.slice(0, 4).map((item) => (
-            <p key={item.id} className="text-[11px] text-gray-500">
-              ~{item.calories} kcal · {item.name} ({item.portion})
-            </p>
-          ))}
-          {log.mealBreakdown.items.length > 4 && (
-            <p className="text-[11px] text-gray-400">
-              +{log.mealBreakdown.items.length - 4} more items
-            </p>
-          )}
-        </div>
-      )}
 
       {log.notes && (
         <p className="text-xs text-gray-400 mt-2 ml-[52px] break-words whitespace-pre-wrap leading-relaxed">

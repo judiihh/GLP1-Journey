@@ -59,7 +59,6 @@ create table if not exists public.nutrition_logs (
   carbs integer,
   fat integer,
   notes text,
-  meal_breakdown jsonb,
   created_at timestamptz not null default now(),
   unique (user_id, date)
 );
@@ -383,6 +382,3 @@ create policy "Users can delete own assistant messages"
 -- alter table public.profiles add column if not exists exclude_shellfish boolean not null default true;
 -- alter table public.profiles add column if not exists exclude_pork boolean not null default true;
 -- alter table public.profiles add column if not exists exclude_duck boolean not null default true;
---
--- AI food analyzer meal breakdown (safe to re-run):
--- alter table public.nutrition_logs add column if not exists meal_breakdown jsonb;
