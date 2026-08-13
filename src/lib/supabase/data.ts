@@ -69,6 +69,7 @@ interface NutritionRow {
   carbs: number | null;
   fat: number | null;
   notes: string | null;
+  meal_breakdown: NutritionLog["mealBreakdown"] | null;
 }
 
 interface WeightRow {
@@ -198,6 +199,7 @@ function mapNutrition(row: NutritionRow): NutritionLog {
     carbs: row.carbs ?? undefined,
     fat: row.fat ?? undefined,
     notes: row.notes ?? undefined,
+    mealBreakdown: row.meal_breakdown ?? undefined,
   };
 }
 
@@ -427,6 +429,7 @@ export async function upsertNutrition(
         carbs: log.carbs ?? null,
         fat: log.fat ?? null,
         notes: log.notes ?? null,
+        meal_breakdown: log.mealBreakdown ?? null,
       },
       { onConflict: "user_id,date" }
     )
