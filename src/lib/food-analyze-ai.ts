@@ -8,7 +8,8 @@ import type {
 import type { UserProfile } from "./types";
 import { getMedicationLabel } from "./utils";
 
-export const FOOD_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+/** Current Groq vision model — see https://console.groq.com/docs/vision */
+export const FOOD_VISION_MODEL = "qwen/qwen3.6-27b";
 
 function num(value: unknown): number {
   const n = Number(value);
@@ -192,7 +193,7 @@ export async function callGroqFoodVision(
         },
       ],
       temperature: 0.4,
-      max_tokens: 2048,
+      max_completion_tokens: 2048,
       response_format: { type: "json_object" },
     }),
   });
