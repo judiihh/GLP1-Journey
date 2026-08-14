@@ -1,6 +1,6 @@
 /* Minimal service worker — enables Chrome/Samsung "Install app" (standalone, no browser badge). */
 
-const CACHE_NAME = "glp1-journey-shell-v1";
+const CACHE_NAME = "glp1-journey-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
