@@ -18,6 +18,7 @@ import {
   getSiteRotationStatus,
   suggestNextInjectionSite,
   todayISO,
+  validateLogDate,
 } from "@/lib/utils";
 import { INJECTION_SITES, MEDICATIONS } from "@/lib/constants";
 import type { GLP1Medication, InjectionSite } from "@/lib/types";
@@ -43,6 +44,8 @@ export default function InjectionsPage() {
   const [notes, setNotes] = useState("");
   const [dosageChanged, setDosageChanged] = useState(false);
   const [saved, setSaved] = useState(false);
+  const today = todayISO();
+  const dateError = validateLogDate(date);
 
   if (!profile) return null;
 
@@ -68,6 +71,7 @@ export default function InjectionsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (validateLogDate(date)) return;
     const newDosage = parseFloat(dosage);
     const isCurrentProfileMed = medication === profile.medication;
     const changed =
@@ -197,6 +201,8 @@ export default function InjectionsPage() {
                     label="Date"
                     type="date"
                     value={date}
+                    max={today}
+                    error={dateError ?? undefined}
                     onChange={(e) => setDate(e.target.value)}
                     required
                   />

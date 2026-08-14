@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { subDays, format } from "date-fns";
 import { useApp } from "@/hooks/useAppData";
 import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
-import { formatDate, todayISO } from "@/lib/utils";
+import { formatDate, todayISO, validateLogDate } from "@/lib/utils";
 import { SEVERITY_LABELS } from "@/lib/constants";
 import { SymptomLogForm } from "@/components/symptoms/SymptomLogForm";
 import {
@@ -21,8 +23,12 @@ export default function SymptomsPage() {
   const today = todayISO();
 
   const [showOtherDayForm, setShowOtherDayForm] = useState<string | null>(null);
+  const [otherLogDate, setOtherLogDate] = useState(() =>
+    format(subDays(new Date(), 1), "yyyy-MM-dd")
+  );
 
   const todaySideEffect = sideEffects.find((s) => s.date === today);
+  const otherDaySideEffect = sideEffects.find((s) => s.date === otherLogDate);
   const injectionDates = useMemo(
     () => new Set(injections.map((i) => i.date)),
     [injections]
@@ -71,12 +77,15 @@ export default function SymptomsPage() {
     }));
 
   const todayHasInjection = injectionDates.has(today);
+  const otherLogDateIsToday = otherLogDate === today;
+  const otherLogDateHasInjection = injectionDates.has(otherLogDate);
+  const otherLogDateError = validateLogDate(otherLogDate);
 
   return (
     <div>
       <PageHeader
         title="Symptoms"
-        subtitle="Log how you feel today and review symptoms around each injection"
+        subtitle="Log how you feel today, catch up on past days, or review symptoms around each injection"
       />
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
@@ -101,6 +110,49 @@ export default function SymptomsPage() {
                 todaySideEffect ? "Update today's symptoms" : "Save today's symptoms"
               }
             />
+          </Card>
+
+          {/* Past or other days — date picker */}
+          <Card>
+            <CardHeader
+              title="Another day"
+              subtitle="Pick a date to log or update symptoms you missed"
+            />
+            <Input
+              label="Date"
+              type="date"
+              value={otherLogDate}
+              max={today}
+              error={otherLogDateError ?? undefined}
+              onChange={(e) => setOtherLogDate(e.target.value)}
+            />
+            {otherLogDateIsToday ? (
+              <p className="text-sm text-gray-500 mt-4 leading-relaxed">
+                For today, use the section above — it’s always ready for a quick log.
+              </p>
+            ) : otherLogDateError ? null : (
+              <>
+                {otherLogDateHasInjection && (
+                  <p className="text-xs text-lavender-600 bg-lavender-50 border border-lavender-100 rounded-lg px-3 py-2.5 mt-4 flex items-start gap-2 leading-relaxed">
+                    <Syringe className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    Injection day — what you log here also shows in your injection history below.
+                  </p>
+                )}
+                <div className="mt-4">
+                  <SymptomLogForm
+                    key={otherLogDate}
+                    date={otherLogDate}
+                    existing={otherDaySideEffect}
+                    onSave={handleSave}
+                    submitLabel={
+                      otherDaySideEffect
+                        ? `Update symptoms for ${formatDate(otherLogDate, "MMM d")}`
+                        : `Save symptoms for ${formatDate(otherLogDate, "MMM d")}`
+                    }
+                  />
+                </div>
+              </>
+            )}
           </Card>
 
           {/* Injection-linked history */}

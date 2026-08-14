@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayISO, validateLogDate } from "@/lib/utils";
 import type { NutritionLog, UserProfile } from "@/lib/types";
 import { Apple, Pencil, Trash2, Check, X } from "lucide-react";
 
@@ -40,6 +40,7 @@ export function NutritionHistoryItem({
   };
 
   const handleSave = async () => {
+    if (validateLogDate(date)) return;
     await onUpdate(
       {
         ...log,
@@ -90,6 +91,8 @@ export function NutritionHistoryItem({
           label="Date"
           type="date"
           value={date}
+          max={todayISO()}
+          error={validateLogDate(date) ?? undefined}
           onChange={(e) => setDate(e.target.value)}
         />
 

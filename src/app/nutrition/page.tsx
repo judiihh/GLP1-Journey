@@ -10,7 +10,7 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { ProgressBar } from "@/components/ui/Progress";
 import { TrendChart } from "@/components/charts/Charts";
 import { NutritionHistoryItem } from "@/components/nutrition/NutritionHistoryItem";
-import { formatDate, getNutritionAverages, todayISO } from "@/lib/utils";
+import { formatDate, getNutritionAverages, todayISO, validateLogDate } from "@/lib/utils";
 import { CheckCircle2, Flame, Beef, Wheat, Droplets, Apple } from "lucide-react";
 
 function emptyForm() {
@@ -29,6 +29,7 @@ export default function NutritionPage() {
 
   const existingForDate = nutrition.find((n) => n.date === logDate);
   const todayLog = nutrition.find((n) => n.date === today);
+  const logDateError = validateLogDate(logDate);
 
   const sortedNutrition = useMemo(
     () => [...nutrition].sort((a, b) => b.date.localeCompare(a.date)),
@@ -54,6 +55,7 @@ export default function NutritionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (validateLogDate(logDate)) return;
     await logNutrition({
       id: existingForDate?.id ?? uuidv4(),
       date: logDate,
@@ -190,6 +192,7 @@ export default function NutritionPage() {
                 type="date"
                 value={logDate}
                 max={today}
+                error={logDateError ?? undefined}
                 onChange={(e) => setLogDate(e.target.value)}
               />
               <div className="grid grid-cols-2 gap-3">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { SIDE_EFFECTS, SEVERITY_LABELS } from "@/lib/constants";
 import type { SideEffectLog, SideEffectType, Severity } from "@/lib/types";
+import { validateLogDate } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 
 interface SymptomLogFormProps {
@@ -36,11 +37,13 @@ export function SymptomLogForm({
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   useEffect(() => {
     setEffects(effectsFromLog(existing));
     setNotes(existing?.notes ?? "");
     setSaved(false);
+    setDateError(null);
   }, [existing, date]);
 
   const setSeverity = (type: SideEffectType, severity: Severity) => {
@@ -49,6 +52,12 @@ export function SymptomLogForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const error = validateLogDate(date);
+    if (error) {
+      setDateError(error);
+      return;
+    }
+    setDateError(null);
     setSaving(true);
     try {
       const activeEffects = Object.entries(effects)
@@ -82,6 +91,11 @@ export function SymptomLogForm({
 
   return (
     <form onSubmit={handleSubmit} className={compact ? "space-y-4" : "space-y-5"}>
+      {dateError && (
+        <p className="text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2.5">
+          {dateError}
+        </p>
+      )}
       {SIDE_EFFECTS.map((symptom) => (
         <div key={symptom.id}>
           <div className="flex items-center gap-2 mb-2">

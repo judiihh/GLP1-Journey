@@ -10,7 +10,7 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
 import { WeightHistoryItem } from "@/components/progress/WeightHistoryItem";
 import { ProgressRing } from "@/components/ui/Progress";
-import { formatDate, getWeightProgress, todayISO } from "@/lib/utils";
+import { formatDate, getWeightProgress, todayISO, validateLogDate } from "@/lib/utils";
 import { CheckCircle2, Scale, Ruler, Target } from "lucide-react";
 
 export default function ProgressPage() {
@@ -25,6 +25,9 @@ export default function ProgressPage() {
   const [hips, setHips] = useState("");
   const [measureDate, setMeasureDate] = useState(todayISO());
   const [saved, setSaved] = useState(false);
+  const today = todayISO();
+  const weightDateError = validateLogDate(weightDate);
+  const measureDateError = validateLogDate(measureDate);
 
   if (!profile) return null;
 
@@ -33,7 +36,7 @@ export default function ProgressPage() {
 
   const handleWeightSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weight) return;
+    if (!weight || validateLogDate(weightDate)) return;
     await logWeight({
       id: uuidv4(),
       date: weightDate,
@@ -49,6 +52,7 @@ export default function ProgressPage() {
 
   const handleMeasureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (validateLogDate(measureDate)) return;
     await logMeasurement({
       id: uuidv4(),
       date: measureDate,
@@ -180,6 +184,8 @@ export default function ProgressPage() {
                   label="Date"
                   type="date"
                   value={weightDate}
+                  max={today}
+                  error={weightDateError ?? undefined}
                   onChange={(e) => setWeightDate(e.target.value)}
                 />
               </div>
@@ -205,6 +211,8 @@ export default function ProgressPage() {
               label="Date"
               type="date"
               value={measureDate}
+              max={today}
+              error={measureDateError ?? undefined}
               onChange={(e) => setMeasureDate(e.target.value)}
             />
             <div className="grid grid-cols-2 gap-3">

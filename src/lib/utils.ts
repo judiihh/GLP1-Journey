@@ -28,6 +28,19 @@ export function todayISO(): string {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+export const FUTURE_LOG_DATE_ERROR =
+  "You can't log entries for future dates. Please choose today or an earlier day.";
+
+export function isFutureLogDate(date: string): boolean {
+  return date > todayISO();
+}
+
+export function validateLogDate(date: string): string | null {
+  if (!date) return "Please choose a date.";
+  if (isFutureLogDate(date)) return FUTURE_LOG_DATE_ERROR;
+  return null;
+}
+
 export function defaultNextInjectionDate(daysAhead = 7): string {
   return format(addDays(new Date(), daysAhead), "yyyy-MM-dd");
 }

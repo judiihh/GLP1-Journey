@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/Input";
-import { formatDate, getMedicationLabel, getSiteLabel } from "@/lib/utils";
+import { formatDate, getMedicationLabel, getSiteLabel, todayISO, validateLogDate } from "@/lib/utils";
 import { INJECTION_SITES, MEDICATIONS } from "@/lib/constants";
 import type { GLP1Medication, InjectionLog, InjectionSite, UserProfile } from "@/lib/types";
 import { ui } from "@/lib/ui-classes";
@@ -57,6 +57,7 @@ export function InjectionHistoryItem({
   };
 
   const handleSave = async () => {
+    if (validateLogDate(date)) return;
     await onUpdate({
       ...injection,
       medication,
@@ -130,6 +131,8 @@ export function InjectionHistoryItem({
             label="Date"
             type="date"
             value={date}
+            max={todayISO()}
+            error={validateLogDate(date) ?? undefined}
             onChange={(e) => setDate(e.target.value)}
           />
           <Input
