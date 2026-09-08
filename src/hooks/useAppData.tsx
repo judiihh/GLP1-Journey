@@ -415,10 +415,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         if (usingSupabase && supabase && user) {
           const saved = await insertMeasurement(supabase, user.id, log);
-          setData((prev) => ({
-            ...prev,
-            measurements: [saved, ...prev.measurements],
-          }));
+          setData((prev) => {
+            const idx = prev.measurements.findIndex((m) => m.date === saved.date);
+            const measurements =
+              idx >= 0
+                ? prev.measurements.map((m, i) => (i === idx ? saved : m))
+                : [saved, ...prev.measurements];
+            return { ...prev, measurements };
+          });
         } else {
           setData(localAddMeasurement(log));
         }

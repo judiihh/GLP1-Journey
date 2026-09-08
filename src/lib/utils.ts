@@ -13,6 +13,7 @@ import type {
   GLP1Medication,
   InjectionSite,
   MealPlanItem,
+  MeasurementLog,
   PatternInsight,
   UserProfile,
 } from "./types";
@@ -39,6 +40,24 @@ export function validateLogDate(date: string): string | null {
   if (!date) return "Please choose a date.";
   if (isFutureLogDate(date)) return FUTURE_LOG_DATE_ERROR;
   return null;
+}
+
+export function mergeMeasurementLog(
+  existing: MeasurementLog | undefined,
+  incoming: MeasurementLog
+): MeasurementLog {
+  return {
+    id: existing?.id ?? incoming.id,
+    date: incoming.date,
+    unit: incoming.unit ?? existing?.unit ?? "in",
+    waist: incoming.waist ?? existing?.waist,
+    hips: incoming.hips ?? existing?.hips,
+    leftArm: incoming.leftArm ?? existing?.leftArm,
+    rightArm: incoming.rightArm ?? existing?.rightArm,
+    chest: incoming.chest ?? existing?.chest,
+    arms: incoming.arms ?? existing?.arms,
+    thighs: incoming.thighs ?? existing?.thighs,
+  };
 }
 
 export function defaultNextInjectionDate(daysAhead = 7): string {

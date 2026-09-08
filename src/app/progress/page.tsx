@@ -12,9 +12,10 @@ import { WeightHistoryItem } from "@/components/progress/WeightHistoryItem";
 import {
   MeasurementHistoryItem,
   measurementChartData,
+  mergeMeasurementsByDate,
 } from "@/components/progress/MeasurementHistoryItem";
 import { ProgressRing } from "@/components/ui/Progress";
-import { formatDate, getWeightProgress, todayISO, validateLogDate } from "@/lib/utils";
+import { formatDate, getWeightProgress, mergeMeasurementLog, todayISO, validateLogDate } from "@/lib/utils";
 import { CheckCircle2, Scale, Ruler, Target } from "lucide-react";
 
 export default function ProgressPage() {
@@ -59,15 +60,19 @@ export default function ProgressPage() {
   const handleMeasureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateLogDate(measureDate)) return;
-    await logMeasurement({
-      id: uuidv4(),
+
+    const existingForDate = measurements.find((m) => m.date === measureDate);
+    const incoming = {
+      id: existingForDate?.id ?? uuidv4(),
       date: measureDate,
       waist: waist ? parseFloat(waist) : undefined,
       hips: hips ? parseFloat(hips) : undefined,
       leftArm: leftArm ? parseFloat(leftArm) : undefined,
       rightArm: rightArm ? parseFloat(rightArm) : undefined,
-      unit: "in",
-    });
+      unit: "in" as const,
+    };
+
+    await logMeasurement(mergeMeasurementLog(existingForDate, incoming));
     setWaist("");
     setHips("");
     setLeftArm("");
@@ -98,8 +103,19 @@ export default function ProgressPage() {
         )
       : null;
 
+  const mergedMeasurements = mergeMeasurementsByDate(measurements);
+
+  const waistData = measurementChartData(measurements, "waist");
+  const hipsData = measurementChartData(measurements, "hips");
   const leftArmData = measurementChartData(measurements, "leftArm");
   const rightArmData = measurementChartData(measurements, "rightArm");
+
+  const measurementTrends = [
+    { title: "Waist trend", data: waistData, color: "#4db8aa" },
+    { title: "Hips trend", data: hipsData, color: "#6bc4b8" },
+    { title: "Left arm trend", data: leftArmData, color: "#a892d4" },
+    { title: "Right arm trend", data: rightArmData, color: "#ebb1cb" },
+  ];
 
   return (
     <div>
@@ -269,32 +285,20 @@ export default function ProgressPage() {
         </Card>
       </div>
 
-      {(leftArmData.length > 0 || rightArmData.length > 0) && (
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          {leftArmData.length > 0 && (
-            <Card>
-              <CardHeader title="Left arm trend" subtitle="Last 14 entries" />
+      {measurements.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-6 mb-6">
+          {measurementTrends.map((chart) => (
+            <Card key={chart.title}>
+              <CardHeader title={chart.title} subtitle="Last 14 entries" />
               <TrendChart
-                data={leftArmData}
+                data={chart.data}
                 dataKey="value"
-                color="#a892d4"
+                color={chart.color}
                 type="bar"
                 unit={`"`}
               />
             </Card>
-          )}
-          {rightArmData.length > 0 && (
-            <Card>
-              <CardHeader title="Right arm trend" subtitle="Last 14 entries" />
-              <TrendChart
-                data={rightArmData}
-                dataKey="value"
-                color="#ebb1cb"
-                type="bar"
-                unit={`"`}
-              />
-            </Card>
-          )}
+          ))}
         </div>
       )}
 
@@ -304,14 +308,14 @@ export default function ProgressPage() {
           title="Measurement history"
           subtitle="Waist, hips, and arm entries by date"
         />
-        {measurements.length === 0 ? (
+        {mergedMeasurements.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <Ruler className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No body measurements logged yet</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {measurements.map((m) => (
+            {mergedMeasurements.map((m) => (
               <MeasurementHistoryItem key={m.id} log={m} />
             ))}
           </div>

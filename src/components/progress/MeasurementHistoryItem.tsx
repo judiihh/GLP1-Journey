@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDate } from "@/lib/utils";
+import { formatDate, mergeMeasurementLog } from "@/lib/utils";
 import type { MeasurementLog } from "@/lib/types";
 import { Ruler } from "lucide-react";
 
@@ -35,16 +35,42 @@ export function MeasurementHistoryItem({ log }: { log: MeasurementLog }) {
   );
 }
 
+export function mergeMeasurementsByDate(
+  measurements: MeasurementLog[]
+): MeasurementLog[] {
+  return [...measurements]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .reduce<MeasurementLog[]>((acc, entry) => {
+      const idx = acc.findIndex((m) => m.date === entry.date);
+      if (idx >= 0) {
+        acc[idx] = mergeMeasurementLog(acc[idx], entry);
+      } else {
+        acc.push({ ...entry });
+      }
+      return acc;
+    }, []);
+}
+
 export function measurementChartData(
   measurements: MeasurementLog[],
   key: "leftArm" | "rightArm" | "waist" | "hips"
 ) {
-  return [...measurements]
-    .filter((m) => m[key] != null)
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const mergedByDate = mergeMeasurementsByDate(measurements).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
+
+  return mergedByDate
+    .map((m) => {
+      const raw = m[key];
+      if (raw == null) return null;
+      const value = typeof raw === "number" ? raw : parseFloat(String(raw));
+      if (!Number.isFinite(value)) return null;
+      return { date: m.date, value };
+    })
+    .filter((entry): entry is { date: string; value: number } => entry !== null)
     .slice(-14)
-    .map((m) => ({
-      date: formatDate(m.date, "MMM d"),
-      value: m[key]!,
+    .map((entry) => ({
+      date: formatDate(entry.date, "MMM d"),
+      value: entry.value,
     }));
 }

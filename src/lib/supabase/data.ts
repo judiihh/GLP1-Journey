@@ -11,6 +11,7 @@ import type {
   WeightLog,
 } from "@/lib/types";
 import { withProfileDefaults } from "@/lib/dietary-preferences";
+import { mergeMeasurementLog } from "@/lib/utils";
 
 const defaultReminders: ReminderSettings = {
   enabled: true,
@@ -213,17 +214,23 @@ function mapWeight(row: WeightRow): WeightLog {
   };
 }
 
+function toOptionalNumber(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 function mapMeasurement(row: MeasurementRow): MeasurementLog {
   return {
     id: row.id,
     date: row.date,
-    waist: row.waist ?? undefined,
-    hips: row.hips ?? undefined,
-    leftArm: row.left_arm ?? row.arms ?? undefined,
-    rightArm: row.right_arm ?? undefined,
-    chest: row.chest ?? undefined,
-    arms: row.arms ?? undefined,
-    thighs: row.thighs ?? undefined,
+    waist: toOptionalNumber(row.waist),
+    hips: toOptionalNumber(row.hips),
+    leftArm: toOptionalNumber(row.left_arm) ?? toOptionalNumber(row.arms),
+    rightArm: toOptionalNumber(row.right_arm),
+    chest: toOptionalNumber(row.chest),
+    arms: toOptionalNumber(row.arms),
+    thighs: toOptionalNumber(row.thighs),
     unit: row.unit as MeasurementLog["unit"],
   };
 }
@@ -530,21 +537,37 @@ export async function insertMeasurement(
   userId: string,
   log: MeasurementLog
 ): Promise<MeasurementLog> {
+  const { data: existingRow } = await supabase
+    .from("measurement_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("date", log.date)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const merged = mergeMeasurementLog(
+    existingRow ? mapMeasurement(existingRow as MeasurementRow) : undefined,
+    log
+  );
+
+  const payload = {
+    id: merged.id,
+    user_id: userId,
+    date: merged.date,
+    waist: merged.waist ?? null,
+    hips: merged.hips ?? null,
+    left_arm: merged.leftArm ?? null,
+    right_arm: merged.rightArm ?? null,
+    chest: merged.chest ?? null,
+    arms: merged.arms ?? null,
+    thighs: merged.thighs ?? null,
+    unit: merged.unit,
+  };
+
   const { data, error } = await supabase
     .from("measurement_logs")
-    .insert({
-      id: log.id,
-      user_id: userId,
-      date: log.date,
-      waist: log.waist ?? null,
-      hips: log.hips ?? null,
-      left_arm: log.leftArm ?? null,
-      right_arm: log.rightArm ?? null,
-      chest: log.chest ?? null,
-      arms: log.arms ?? null,
-      thighs: log.thighs ?? null,
-      unit: log.unit,
-    })
+    .upsert(payload, { onConflict: "id" })
     .select("*")
     .single();
 

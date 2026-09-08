@@ -2,6 +2,7 @@
 
 import type { AppData, ReminderSettings, UserProfile } from "./types";
 import { withProfileDefaults } from "./dietary-preferences";
+import { mergeMeasurementLog } from "./utils";
 
 const STORAGE_KEY = "glp1-tracker-data";
 
@@ -142,7 +143,12 @@ export function deleteWeight(id: string): AppData {
 
 export function addMeasurement(log: AppData["measurements"][0]): AppData {
   const data = loadData();
-  data.measurements.unshift(log);
+  const idx = data.measurements.findIndex((m) => m.date === log.date);
+  if (idx >= 0) {
+    data.measurements[idx] = mergeMeasurementLog(data.measurements[idx], log);
+  } else {
+    data.measurements.unshift(log);
+  }
   saveData(data);
   return data;
 }
