@@ -86,6 +86,8 @@ interface MeasurementRow {
   date: string;
   waist: number | null;
   hips: number | null;
+  left_arm: number | null;
+  right_arm: number | null;
   chest: number | null;
   arms: number | null;
   thighs: number | null;
@@ -217,6 +219,8 @@ function mapMeasurement(row: MeasurementRow): MeasurementLog {
     date: row.date,
     waist: row.waist ?? undefined,
     hips: row.hips ?? undefined,
+    leftArm: row.left_arm ?? row.arms ?? undefined,
+    rightArm: row.right_arm ?? undefined,
     chest: row.chest ?? undefined,
     arms: row.arms ?? undefined,
     thighs: row.thighs ?? undefined,
@@ -534,6 +538,8 @@ export async function insertMeasurement(
       date: log.date,
       waist: log.waist ?? null,
       hips: log.hips ?? null,
+      left_arm: log.leftArm ?? null,
+      right_arm: log.rightArm ?? null,
       chest: log.chest ?? null,
       arms: log.arms ?? null,
       thighs: log.thighs ?? null,

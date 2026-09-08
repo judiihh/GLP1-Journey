@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
 import { WeightHistoryItem } from "@/components/progress/WeightHistoryItem";
+import {
+  MeasurementHistoryItem,
+  measurementChartData,
+} from "@/components/progress/MeasurementHistoryItem";
 import { ProgressRing } from "@/components/ui/Progress";
 import { formatDate, getWeightProgress, todayISO, validateLogDate } from "@/lib/utils";
 import { CheckCircle2, Scale, Ruler, Target } from "lucide-react";
@@ -23,6 +27,8 @@ export default function ProgressPage() {
   const [weightNotes, setWeightNotes] = useState("");
   const [waist, setWaist] = useState("");
   const [hips, setHips] = useState("");
+  const [leftArm, setLeftArm] = useState("");
+  const [rightArm, setRightArm] = useState("");
   const [measureDate, setMeasureDate] = useState(todayISO());
   const [saved, setSaved] = useState(false);
   const today = todayISO();
@@ -58,10 +64,14 @@ export default function ProgressPage() {
       date: measureDate,
       waist: waist ? parseFloat(waist) : undefined,
       hips: hips ? parseFloat(hips) : undefined,
+      leftArm: leftArm ? parseFloat(leftArm) : undefined,
+      rightArm: rightArm ? parseFloat(rightArm) : undefined,
       unit: "in",
     });
     setWaist("");
     setHips("");
+    setLeftArm("");
+    setRightArm("");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -87,6 +97,9 @@ export default function ProgressPage() {
           )
         )
       : null;
+
+  const leftArmData = measurementChartData(measurements, "leftArm");
+  const rightArmData = measurementChartData(measurements, "rightArm");
 
   return (
     <div>
@@ -232,6 +245,22 @@ export default function ProgressPage() {
                 value={hips}
                 onChange={(e) => setHips(e.target.value)}
               />
+              <Input
+                label="Left arm (in)"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                value={leftArm}
+                onChange={(e) => setLeftArm(e.target.value)}
+              />
+              <Input
+                label="Right arm (in)"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                value={rightArm}
+                onChange={(e) => setRightArm(e.target.value)}
+              />
             </div>
             <Button type="submit" variant="secondary" className="w-full">
               <Ruler className="w-4 h-4" /> Save measurements
@@ -239,6 +268,55 @@ export default function ProgressPage() {
           </form>
         </Card>
       </div>
+
+      {(leftArmData.length > 0 || rightArmData.length > 0) && (
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {leftArmData.length > 0 && (
+            <Card>
+              <CardHeader title="Left arm trend" subtitle="Last 14 entries" />
+              <TrendChart
+                data={leftArmData}
+                dataKey="value"
+                color="#a892d4"
+                type="bar"
+                unit={`"`}
+              />
+            </Card>
+          )}
+          {rightArmData.length > 0 && (
+            <Card>
+              <CardHeader title="Right arm trend" subtitle="Last 14 entries" />
+              <TrendChart
+                data={rightArmData}
+                dataKey="value"
+                color="#ebb1cb"
+                type="bar"
+                unit={`"`}
+              />
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Measurement history */}
+      <Card className="mb-6">
+        <CardHeader
+          title="Measurement history"
+          subtitle="Waist, hips, and arm entries by date"
+        />
+        {measurements.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <Ruler className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No body measurements logged yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {measurements.map((m) => (
+              <MeasurementHistoryItem key={m.id} log={m} />
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Weight history */}
       <Card>

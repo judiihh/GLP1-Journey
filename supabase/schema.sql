@@ -81,6 +81,8 @@ create table if not exists public.measurement_logs (
   date date not null,
   waist numeric,
   hips numeric,
+  left_arm numeric,
+  right_arm numeric,
   chest numeric,
   arms numeric,
   thighs numeric,
@@ -382,3 +384,7 @@ create policy "Users can delete own assistant messages"
 -- alter table public.profiles add column if not exists exclude_shellfish boolean not null default true;
 -- alter table public.profiles add column if not exists exclude_pork boolean not null default true;
 -- alter table public.profiles add column if not exists exclude_duck boolean not null default true;
+--
+-- Arm measurements (safe to re-run):
+-- alter table public.measurement_logs add column if not exists left_arm numeric;
+-- alter table public.measurement_logs add column if not exists right_arm numeric;

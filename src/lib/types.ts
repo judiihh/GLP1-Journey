@@ -94,6 +94,8 @@ export interface MeasurementLog {
   date: string;
   waist?: number;
   hips?: number;
+  leftArm?: number;
+  rightArm?: number;
   chest?: number;
   arms?: number;
   thighs?: number;
