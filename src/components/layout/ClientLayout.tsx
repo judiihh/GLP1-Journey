@@ -6,7 +6,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AppProvider } from "@/hooks/useAppData";
 import { Sidebar, MobileHeader, MobileMenu } from "@/components/layout/Navigation";
 import { AppShell } from "@/components/layout/AppShell";
-import { PwaRegister } from "@/components/pwa/PwaRegister";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,10 +16,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   if (isLoginPage) {
     return (
       <AuthProvider>
-        <AppProvider>
-          <PwaRegister />
-          {children}
-        </AppProvider>
+        <AppProvider>{children}</AppProvider>
       </AuthProvider>
     );
   }
@@ -28,7 +24,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <AppProvider>
-        <PwaRegister />
         <div className="flex min-h-screen min-h-[100dvh] bg-gradient-to-br from-cream-50 via-rose-50/25 to-lavender-50/35 overflow-x-hidden">
           <Sidebar />
           <div className="flex flex-col flex-1 min-w-0 w-full">

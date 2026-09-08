@@ -1,22 +1,14 @@
-/* Install-only service worker — required for Chrome PWA install, must not intercept app requests. */
+/* Uninstall legacy service workers — clears caches and removes registration. */
 
-const CACHE_NAME = "glp1-journey-install-v3";
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(["/manifest.webmanifest"]))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key.startsWith("glp1-journey") && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.registration.unregister())
   );
 });

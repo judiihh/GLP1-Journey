@@ -48,6 +48,32 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${dmSans.variable} font-sans antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+  var FLAG = "glp1-sw-cleared-v4";
+  try {
+    if (sessionStorage.getItem(FLAG)) return;
+  } catch (e) {}
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    if (!regs.length) return;
+    return Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+      if (window.caches && caches.keys) {
+        return caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        });
+      }
+    }).then(function () {
+      try { sessionStorage.setItem(FLAG, "1"); } catch (e) {}
+      location.reload();
+    });
+  });
+})();
+            `.trim(),
+          }}
+        />
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
