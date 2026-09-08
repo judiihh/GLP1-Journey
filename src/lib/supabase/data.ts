@@ -225,10 +225,11 @@ function mapMeasurement(row: MeasurementRow): MeasurementLog {
 }
 
 function mapSideEffect(row: SideEffectRow): SideEffectLog {
+  const effects = Array.isArray(row.effects) ? row.effects : [];
   return {
     id: row.id,
     date: row.date,
-    effects: row.effects ?? [],
+    effects,
     energyLevel: (row.energy_level ?? undefined) as SideEffectLog["energyLevel"],
     appetiteLevel: (row.appetite_level ?? undefined) as SideEffectLog["appetiteLevel"],
     notes: row.notes ?? undefined,

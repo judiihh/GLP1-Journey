@@ -18,6 +18,7 @@ import {
   saveAssistantMessage,
 } from "@/lib/assistant-storage";
 import { Bot, Send, User, AlertCircle, Sparkles, Trash2 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/cn";
 
 function formatMessageTime(iso?: string): string {
@@ -90,7 +91,7 @@ export default function AssistantPage() {
     if (!trimmed || loading) return;
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       role: "user",
       content: trimmed,
       createdAt: new Date().toISOString(),
@@ -123,7 +124,7 @@ export default function AssistantPage() {
       }
 
       const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         role: "assistant",
         content: data.message,
         createdAt: new Date().toISOString(),
