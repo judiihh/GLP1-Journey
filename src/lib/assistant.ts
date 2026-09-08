@@ -1,5 +1,6 @@
 import type { UserProfile } from "./types";
 import { getMedicationLabel } from "./utils";
+import { isGroqConfigured } from "./groq";
 
 export interface ChatMessage {
   id?: string;
@@ -9,7 +10,7 @@ export interface ChatMessage {
 }
 
 export function isAssistantConfigured(): boolean {
-  return Boolean(process.env.GROQ_API_KEY?.trim());
+  return isGroqConfigured();
 }
 
 export function buildAssistantSystemPrompt(profile?: UserProfile | null): string {

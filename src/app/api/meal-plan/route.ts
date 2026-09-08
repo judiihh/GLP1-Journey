@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { isAssistantConfigured } from "@/lib/assistant";
 import {
+  getGroqApiKey,
+  getGroqModel,
+  GROQ_CHAT_API,
+} from "@/lib/groq";
+import {
   buildMealPlanPrompt,
   buildMealPlanUserMessage,
   parseAiMealPlan,
@@ -8,7 +13,6 @@ import {
 import { todayISO } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
 
-const MODEL = "llama-3.3-70b-versatile";
 const MAX_ATTEMPTS = 3;
 
 async function callGroqMealPlan(
@@ -18,14 +22,14 @@ async function callGroqMealPlan(
   const systemPrompt = buildMealPlanPrompt(profile);
   const userMessage = buildMealPlanUserMessage(profile);
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch(GROQ_CHAT_API, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: getGroqModel(),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
@@ -78,7 +82,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Profile is required." }, { status: 400 });
   }
 
-  const apiKey = process.env.GROQ_API_KEY!.trim();
+  const apiKey = getGroqApiKey()!;
   let lastError = "Failed to generate meal plan.";
 
   try {

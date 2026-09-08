@@ -1,6 +1,6 @@
-/* Minimal service worker — enables Chrome/Samsung "Install app" (standalone, no browser badge). */
+/* Install-only service worker — required for Chrome PWA install, must not intercept app requests. */
 
-const CACHE_NAME = "glp1-journey-shell-v2";
+const CACHE_NAME = "glp1-journey-install-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -10,12 +10,13 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith("glp1-journey") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
 });

@@ -6,7 +6,9 @@ export function PwaRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((registration) => {
+      registration.update().catch(() => {});
+    }).catch(() => {
       // Silent — PWA install is optional; manual logging still works in browser.
     });
   }, []);
