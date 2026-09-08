@@ -3,6 +3,7 @@ import {
   differenceInDays,
   format,
   getDay,
+  isValid,
   parseISO,
   startOfDay,
   subDays,
@@ -14,13 +15,16 @@ import type {
   InjectionSite,
   MealPlanItem,
   PatternInsight,
+  SideEffectLog,
   UserProfile,
 } from "./types";
 import { INJECTION_SITES, MEAL_TEMPLATES, MEDICATIONS } from "./constants";
 import { mealPlanTotals, scaleMealsToCalorieGoal } from "./meal-plan-shared";
 
 export function formatDate(date: string | Date, fmt = "MMM d, yyyy"): string {
+  if (!date) return "—";
   const d = typeof date === "string" ? parseISO(date) : date;
+  if (!isValid(d)) return "—";
   return format(d, fmt);
 }
 
@@ -215,6 +219,12 @@ export function getNutritionAverages(nutrition: AppData["nutrition"], days = 7) 
   };
 }
 
+export function sideEffectItems(
+  log?: { effects?: SideEffectLog["effects"] } | null
+): SideEffectLog["effects"] {
+  return Array.isArray(log?.effects) ? log.effects : [];
+}
+
 export function analyzePatterns(data: AppData): PatternInsight[] {
   const insights: PatternInsight[] = [];
   const { injections, sideEffects, nutrition, weights, profile } = data;
@@ -227,7 +237,7 @@ export function analyzePatterns(data: AppData): PatternInsight[] {
       return diff >= 0 && diff <= 7;
     });
     const nauseaDays = weekAfter.filter((s) =>
-      s.effects.some((e) => e.type === "nausea" && e.severity >= 3)
+      sideEffectItems(s).some((e) => e.type === "nausea" && e.severity >= 3)
     );
     if (nauseaDays.length >= 2) {
       insights.push({
@@ -249,7 +259,10 @@ export function analyzePatterns(data: AppData): PatternInsight[] {
         differenceInDays(parseISO(s.date), parseISO(injection.date)) === 1
     );
     if (dayOf || dayAfter) {
-      const effects = [...(dayOf?.effects ?? []), ...(dayAfter?.effects ?? [])];
+      const effects = [
+        ...sideEffectItems(dayOf),
+        ...sideEffectItems(dayAfter),
+      ];
       const significant = effects.filter((e) => e.severity >= 3);
       if (significant.length >= 2) {
         insights.push({
@@ -269,7 +282,7 @@ export function analyzePatterns(data: AppData): PatternInsight[] {
   const lowProteinDays = nutrition.filter((n) => n.protein < (profile?.proteinGoal ?? 100) * 0.6);
   for (const day of lowProteinDays.slice(0, 5)) {
     const symptoms = sideEffects.find((s) => s.date === day.date);
-    const fatigue = symptoms?.effects.find(
+    const fatigue = sideEffectItems(symptoms).find(
       (e) => (e.type === "fatigue" || e.type === "energy") && e.severity >= 3
     );
     if (fatigue) {

@@ -21,7 +21,7 @@ export function ProgressRing({
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(value / max, 1);
+  const progress = max > 0 ? Math.min(value / max, 1) : 0;
   const offset = circumference - progress * circumference;
 
   return (
@@ -77,7 +77,7 @@ export function ProgressBar({
   showValue,
   unit = "",
 }: ProgressBarProps) {
-  const pct = Math.min((value / max) * 100, 100);
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
     <div className="space-y-1.5">
       {(label || showValue) && (

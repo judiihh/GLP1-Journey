@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { SIDE_EFFECTS, SEVERITY_LABELS } from "@/lib/constants";
 import type { SideEffectLog, SideEffectType, Severity } from "@/lib/types";
-import { validateLogDate } from "@/lib/utils";
+import { validateLogDate, sideEffectItems } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 
 interface SymptomLogFormProps {
@@ -20,7 +20,7 @@ interface SymptomLogFormProps {
 function effectsFromLog(log?: SideEffectLog): Record<SideEffectType, Severity> {
   if (!log) return {} as Record<SideEffectType, Severity>;
   return Object.fromEntries(
-    log.effects.map((e) => [e.type, e.severity])
+    sideEffectItems(log).map((e) => [e.type, e.severity])
   ) as Record<SideEffectType, Severity>;
 }
 
@@ -142,8 +142,9 @@ export function SymptomLogForm({
 }
 
 export function symptomSummaryTags(entry?: SideEffectLog) {
-  if (!entry || entry.effects.length === 0) return [];
-  return entry.effects
+  const effects = sideEffectItems(entry);
+  if (effects.length === 0) return [];
+  return effects
     .filter((e) => e.severity >= 1)
     .map((e) => ({
       type: e.type,
