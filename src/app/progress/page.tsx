@@ -19,7 +19,7 @@ import { formatDate, getWeightProgress, mergeMeasurementLog, todayISO, validateL
 import { CheckCircle2, Scale, Ruler, Target } from "lucide-react";
 
 export default function ProgressPage() {
-  const { data, logWeight, updateWeight, deleteWeight, logMeasurement, isSaving } =
+  const { data, logWeight, updateWeight, deleteWeight, logMeasurement, updateMeasurement, deleteMeasurement, isSaving } =
     useApp();
   const { profile, weights, measurements } = data;
 
@@ -306,7 +306,7 @@ export default function ProgressPage() {
       <Card className="mb-6">
         <CardHeader
           title="Measurement history"
-          subtitle="Waist, hips, and arm entries by date"
+          subtitle="Tap edit or delete on any entry"
         />
         {mergedMeasurements.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
@@ -316,7 +316,13 @@ export default function ProgressPage() {
         ) : (
           <div className="space-y-3">
             {mergedMeasurements.map((m) => (
-              <MeasurementHistoryItem key={m.id} log={m} />
+              <MeasurementHistoryItem
+                key={m.id}
+                log={m}
+                onUpdate={updateMeasurement}
+                onDelete={deleteMeasurement}
+                isSaving={isSaving}
+              />
             ))}
           </div>
         )}

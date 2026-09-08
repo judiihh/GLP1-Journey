@@ -153,6 +153,27 @@ export function addMeasurement(log: AppData["measurements"][0]): AppData {
   return data;
 }
 
+export function updateMeasurement(
+  log: AppData["measurements"][0],
+  previousDate: string
+): AppData {
+  const data = loadData();
+  data.measurements = data.measurements.filter(
+    (m) => m.date !== previousDate && m.date !== log.date
+  );
+  data.measurements.unshift(log);
+  data.measurements.sort((a, b) => b.date.localeCompare(a.date));
+  saveData(data);
+  return data;
+}
+
+export function deleteMeasurementsByDate(date: string): AppData {
+  const data = loadData();
+  data.measurements = data.measurements.filter((m) => m.date !== date);
+  saveData(data);
+  return data;
+}
+
 export function addSideEffect(log: AppData["sideEffects"][0]): AppData {
   const data = loadData();
   const existing = data.sideEffects.findIndex((s) => s.date === log.date);

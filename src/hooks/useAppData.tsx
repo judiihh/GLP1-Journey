@@ -16,6 +16,8 @@ import {
   fetchAppData,
   insertInjection,
   insertMeasurement,
+  updateMeasurement as supabaseUpdateMeasurement,
+  deleteMeasurementsByDate as supabaseDeleteMeasurementsByDate,
   insertWeight,
   updateWeight as supabaseUpdateWeight,
   deleteWeight as supabaseDeleteWeight,
@@ -31,6 +33,8 @@ import {
   loadData,
   addInjection as localAddInjection,
   addMeasurement as localAddMeasurement,
+  updateMeasurement as localUpdateMeasurement,
+  deleteMeasurementsByDate as localDeleteMeasurementsByDate,
   addNutrition as localAddNutrition,
   updateNutrition as localUpdateNutrition,
   deleteNutrition as localDeleteNutrition,
@@ -64,6 +68,11 @@ interface AppContextValue {
   updateWeight: (log: AppData["weights"][0]) => Promise<void>;
   deleteWeight: (id: string) => Promise<void>;
   logMeasurement: (log: AppData["measurements"][0]) => Promise<void>;
+  updateMeasurement: (
+    log: AppData["measurements"][0],
+    previousDate: string
+  ) => Promise<void>;
+  deleteMeasurement: (date: string) => Promise<void>;
   logSideEffect: (log: AppData["sideEffects"][0]) => Promise<void>;
   setReminders: (reminders: ReminderSettings) => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -415,20 +424,81 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         if (usingSupabase && supabase && user) {
           const saved = await insertMeasurement(supabase, user.id, log);
-          setData((prev) => {
-            const idx = prev.measurements.findIndex((m) => m.date === saved.date);
-            const measurements =
-              idx >= 0
-                ? prev.measurements.map((m, i) => (i === idx ? saved : m))
-                : [saved, ...prev.measurements];
-            return { ...prev, measurements };
-          });
+          setData((prev) => ({
+            ...prev,
+            measurements: [
+              saved,
+              ...prev.measurements.filter((m) => m.date !== saved.date),
+            ].sort((a, b) => b.date.localeCompare(a.date)),
+          }));
         } else {
           setData(localAddMeasurement(log));
         }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to log measurement"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const updateMeasurement = useCallback(
+    async (log: AppData["measurements"][0], previousDate: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          const saved = await supabaseUpdateMeasurement(
+            supabase,
+            user.id,
+            log,
+            previousDate
+          );
+          setData((prev) => ({
+            ...prev,
+            measurements: [
+              saved,
+              ...prev.measurements.filter(
+                (m) => m.date !== previousDate && m.date !== saved.date
+              ),
+            ].sort((a, b) => b.date.localeCompare(a.date)),
+          }));
+        } else {
+          setData(localUpdateMeasurement(log, previousDate));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update measurement"
+        );
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [usingSupabase, supabase, user]
+  );
+
+  const deleteMeasurement = useCallback(
+    async (date: string) => {
+      setIsSaving(true);
+      setError(null);
+      try {
+        if (usingSupabase && supabase && user) {
+          await supabaseDeleteMeasurementsByDate(supabase, user.id, date);
+          setData((prev) => ({
+            ...prev,
+            measurements: prev.measurements.filter((m) => m.date !== date),
+          }));
+        } else {
+          setData(localDeleteMeasurementsByDate(date));
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to delete measurement"
         );
         throw err;
       } finally {
@@ -534,6 +604,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateWeight,
         deleteWeight,
         logMeasurement,
+        updateMeasurement,
+        deleteMeasurement,
         logSideEffect,
         setReminders,
         clearAllData,

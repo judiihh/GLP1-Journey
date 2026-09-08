@@ -575,6 +575,63 @@ export async function insertMeasurement(
   return mapMeasurement(data as MeasurementRow);
 }
 
+export async function updateMeasurement(
+  supabase: SupabaseClient,
+  userId: string,
+  log: MeasurementLog,
+  previousDate: string
+): Promise<MeasurementLog> {
+  if (previousDate !== log.date) {
+    await deleteMeasurementsByDate(supabase, userId, previousDate);
+  }
+
+  const { error: cleanupError } = await supabase
+    .from("measurement_logs")
+    .delete()
+    .eq("user_id", userId)
+    .eq("date", log.date)
+    .neq("id", log.id);
+
+  if (cleanupError) throw cleanupError;
+
+  const payload = {
+    id: log.id,
+    user_id: userId,
+    date: log.date,
+    waist: log.waist ?? null,
+    hips: log.hips ?? null,
+    left_arm: log.leftArm ?? null,
+    right_arm: log.rightArm ?? null,
+    chest: log.chest ?? null,
+    arms: log.arms ?? null,
+    thighs: log.thighs ?? null,
+    unit: log.unit,
+  };
+
+  const { data, error } = await supabase
+    .from("measurement_logs")
+    .upsert(payload, { onConflict: "id" })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapMeasurement(data as MeasurementRow);
+}
+
+export async function deleteMeasurementsByDate(
+  supabase: SupabaseClient,
+  userId: string,
+  date: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("measurement_logs")
+    .delete()
+    .eq("user_id", userId)
+    .eq("date", date);
+
+  if (error) throw error;
+}
+
 export async function upsertSideEffect(
   supabase: SupabaseClient,
   userId: string,
