@@ -5,6 +5,33 @@ import { useApp } from "@/hooks/useAppData";
 import { getDaysUntilInjection, getMedicationLabel, formatDate } from "@/lib/utils";
 import { isReminderSoundEnabled, playReminderChime } from "@/lib/reminder-sound";
 
+/**
+ * Android (Chrome and Samsung Internet) throws on `new Notification()` — notifications
+ * must come from a service worker registration. Desktop supports both.
+ */
+async function showReminderNotification(
+  title: string,
+  options: NotificationOptions
+): Promise<void> {
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        await registration.showNotification(title, options);
+        return;
+      }
+    }
+  } catch {
+    // Fall through to the constructor below.
+  }
+
+  try {
+    new Notification(title, options);
+  } catch {
+    // Notifications unavailable on this device — the in-app reminder still shows.
+  }
+}
+
 export function useReminders() {
   const { data } = useApp();
   const notifiedRef = useRef<string | null>(null);
@@ -24,30 +51,42 @@ export function useReminders() {
     const key = `reminder-${daysUntil}-${new Date().toDateString()}`;
     if (notifiedRef.current === key) return;
 
-    const showNotification = () => {
+    const notify = () => {
+      // Marked up front so a failed notification can't retry on every re-render.
+      notifiedRef.current = key;
+
       const med = getMedicationLabel(data.profile!.medication);
       const dateLabel = data.profile!.nextInjectionDate
         ? formatDate(data.profile!.nextInjectionDate)
         : "your scheduled day";
-      new Notification("Injection Reminder 💜", {
+
+      void showReminderNotification("Injection Reminder 💜", {
         body:
           daysUntil === 0
             ? `Today is your ${med} injection day!`
             : `Your ${med} injection is in ${daysUntil} day${daysUntil > 1 ? "s" : ""} (${dateLabel}).`,
-        icon: "/apple-icon",
+        icon: "/icons/icon-192.png",
       });
+
       if (isReminderSoundEnabled()) {
         void playReminderChime();
       }
-      notifiedRef.current = key;
     };
 
-    if (Notification.permission === "granted") {
-      showNotification();
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then((perm) => {
-        if (perm === "granted") showNotification();
-      });
+    try {
+      if (Notification.permission === "granted") {
+        notify();
+      } else if (Notification.permission !== "denied") {
+        void Notification.requestPermission()
+          .then((perm) => {
+            if (perm === "granted") notify();
+          })
+          .catch(() => {
+            // Permission prompt unavailable — skip silently.
+          });
+      }
+    } catch {
+      // Notification API unusable on this device — never break the app shell.
     }
   }, [data]);
 }

@@ -48,23 +48,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${dmSans.variable} font-sans antialiased`}>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-(function () {
-  if (!("serviceWorker" in navigator)) return;
-  navigator.serviceWorker.getRegistrations().then(function (regs) {
-    regs.forEach(function (r) { r.unregister(); });
-  });
-  if (window.caches && caches.keys) {
-    caches.keys().then(function (keys) {
-      keys.forEach(function (k) { caches.delete(k); });
-    });
-  }
-})();
-            `.trim(),
-          }}
-        />
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

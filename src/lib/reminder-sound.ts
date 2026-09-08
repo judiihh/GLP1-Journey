@@ -17,13 +17,22 @@ function getAudioContext(): AudioContext | null {
 
 export function isReminderSoundEnabled(): boolean {
   if (typeof window === "undefined") return true;
-  const stored = localStorage.getItem(SOUND_ENABLED_KEY);
-  return stored === null ? true : stored === "true";
+  try {
+    const stored = localStorage.getItem(SOUND_ENABLED_KEY);
+    return stored === null ? true : stored === "true";
+  } catch {
+    // Storage blocked (private/secret mode) — fall back to the default.
+    return true;
+  }
 }
 
 export function setReminderSoundEnabled(enabled: boolean): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(SOUND_ENABLED_KEY, String(enabled));
+  try {
+    localStorage.setItem(SOUND_ENABLED_KEY, String(enabled));
+  } catch {
+    // Preference just won't persist on this device.
+  }
 }
 
 /** Call from a user gesture (button tap) so mobile browsers allow audio later. */

@@ -1,6 +1,5 @@
 "use client";
 
-import { Component, useEffect, useState, type ReactNode } from "react";
 import {
   LineChart,
   Line,
@@ -32,31 +31,6 @@ interface ChartProps {
   unit?: string;
 }
 
-class ChartErrorBoundary extends Component<
-  { children: ReactNode; height: number },
-  { failed: boolean }
-> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  render() {
-    if (this.state.failed) {
-      return (
-        <div
-          className="flex items-center justify-center text-gray-400 text-sm px-4 text-center"
-          style={{ height: this.props.height }}
-        >
-          Chart unavailable on this device — your data is still saved.
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 export function TrendChart({
   data,
   dataKey,
@@ -66,12 +40,6 @@ export function TrendChart({
   type = "area",
   unit = "",
 }: ChartProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   if (data.length === 0) {
     return (
       <div
@@ -79,17 +47,6 @@ export function TrendChart({
         style={{ height }}
       >
         Log some data to see your trends here
-      </div>
-    );
-  }
-
-  if (!mounted) {
-    return (
-      <div
-        className="flex items-center justify-center text-gray-400 text-sm"
-        style={{ height }}
-      >
-        Loading chart…
       </div>
     );
   }
@@ -108,71 +65,65 @@ export function TrendChart({
       <div className="bg-white/95 backdrop-blur px-3 py-2 rounded-lg shadow-soft border border-lavender-100 text-sm">
         <p className="text-gray-500 text-xs">{label}</p>
         <p className="font-semibold text-gray-800">
-          {payload[0].value}
-          {unit}
+          {payload[0].value}{unit}
         </p>
       </div>
     );
   };
 
   return (
-    <ChartErrorBoundary height={height}>
-      <div
-        className="w-full min-w-0 overflow-hidden"
-        style={{ height, minHeight: height }}
-      >
-        <ResponsiveContainer width="100%" height={height} debounce={100}>
-          {type === "bar" ? (
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
-              <XAxis
-                dataKey={xKey}
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                interval={data.length > 8 ? Math.ceil(data.length / 7) - 1 : 0}
-              />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
-            </BarChart>
-          ) : type === "line" ? (
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
-              <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey={dataKey}
-                stroke={color}
-                strokeWidth={2.5}
-                dot={{ fill: color, r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          ) : (
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id={`grad-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
-              <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey={dataKey}
-                stroke={color}
-                strokeWidth={2.5}
-                fill={`url(#grad-${dataKey})`}
-              />
-            </AreaChart>
-          )}
-        </ResponsiveContainer>
-      </div>
-    </ChartErrorBoundary>
+    <div className="w-full min-w-0 overflow-hidden" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      {type === "bar" ? (
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
+          <XAxis
+            dataKey={xKey}
+            tick={{ fontSize: 10, fill: "#9ca3af" }}
+            interval={data.length > 8 ? Math.ceil(data.length / 7) - 1 : 0}
+          />
+          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
+        </BarChart>
+      ) : type === "line" ? (
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
+          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Line
+            type="monotone"
+            dataKey={dataKey}
+            stroke={color}
+            strokeWidth={2.5}
+            dot={{ fill: color, r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      ) : (
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id={`grad-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0ecf8" />
+          <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Area
+            type="monotone"
+            dataKey={dataKey}
+            stroke={color}
+            strokeWidth={2.5}
+            fill={`url(#grad-${dataKey})`}
+          />
+        </AreaChart>
+      )}
+    </ResponsiveContainer>
+    </div>
   );
 }
 

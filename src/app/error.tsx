@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 
 export default function Error({
   error,
@@ -21,30 +20,17 @@ export default function Error({
           Something went wrong
         </h1>
         <p className="text-sm text-gray-600 leading-relaxed">
-          The app hit an unexpected error on this device. Your data is still saved —
-          try opening the Report page for your doctor visit, or sign in again below.
+          The app hit an unexpected error. If you installed it on your home screen,
+          try closing it completely and opening it again. If it keeps happening,
+          remove the home screen shortcut and reinstall from Chrome.
         </p>
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={reset}
-            className="w-full rounded-xl bg-lavender-400 hover:bg-lavender-500 text-white font-medium py-2.5 transition-colors"
-          >
-            Try again
-          </button>
-          <Link
-            href="/report"
-            className="w-full rounded-xl bg-white border border-lavender-200 text-lavender-700 font-medium py-2.5 transition-colors block"
-          >
-            Open doctor report
-          </Link>
-          <Link
-            href="/login"
-            className="w-full rounded-xl bg-white border border-lavender-200 text-gray-600 font-medium py-2.5 transition-colors block"
-          >
-            Back to sign in
-          </Link>
-        </div>
+        <button
+          type="button"
+          onClick={reset}
+          className="w-full rounded-xl bg-lavender-400 hover:bg-lavender-500 text-white font-medium py-2.5 transition-colors"
+        >
+          Try again
+        </button>
       </div>
     </div>
   );

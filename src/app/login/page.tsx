@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,12 +15,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useMemo(
-    () => (isSupabaseConfigured() ? createClient() : null),
-    []
-  );
 
-  if (!isSupabaseConfigured() || !supabase) {
+  if (!isSupabaseConfigured()) {
     return (
       <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-cream-50 via-lavender-50/30 to-rose-50/30 overflow-x-hidden">
         <Card className="w-full max-w-md min-w-0 text-center p-6 sm:p-8">
@@ -36,6 +32,8 @@ export default function LoginPage() {
       </div>
     );
   }
+
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -4,9 +4,9 @@ import {
   isAssistantConfigured,
   type ChatMessage,
 } from "@/lib/assistant";
-import { getGroqApiKey, getGroqModel, GROQ_CHAT_API } from "@/lib/groq";
 import type { UserProfile } from "@/lib/types";
 
+const MODEL = "llama-3.3-70b-versatile";
 const MAX_MESSAGES = 20;
 const MAX_CONTENT_LENGTH = 4000;
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const apiKey = getGroqApiKey()!;
+  const apiKey = process.env.GROQ_API_KEY!.trim();
   const systemPrompt = buildAssistantSystemPrompt(body.profile ?? null);
 
   const chatMessages = [
@@ -62,14 +62,14 @@ export async function POST(request: Request) {
   ];
 
   try {
-    const res = await fetch(GROQ_CHAT_API, {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: getGroqModel(),
+        model: MODEL,
         messages: chatMessages,
         temperature: 0.7,
         max_tokens: 1024,

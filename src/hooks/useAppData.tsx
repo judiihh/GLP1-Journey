@@ -92,7 +92,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const usingSupabase = isSupabaseConfigured();
-  const supabase = useMemo(() => (usingSupabase ? createClient() : null), [usingSupabase]);
+  const supabase = useMemo(
+    () => (usingSupabase ? createClient() : null),
+    [usingSupabase]
+  );
 
   const refresh = useCallback(async () => {
     setError(null);
@@ -501,40 +504,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [usingSupabase, supabase, user, refresh]);
 
-  const contextValue: AppContextValue = {
-    data,
-    refresh,
-    setProfile,
-    logInjection,
-    updateInjection,
-    deleteInjection,
-    logNutrition,
-    updateNutrition,
-    deleteNutrition,
-    logWeight,
-    updateWeight,
-    deleteWeight,
-    logMeasurement,
-    logSideEffect,
-    setReminders,
-    clearAllData,
-    isLoaded,
-    isSaving,
-    error,
-    usingSupabase,
-  };
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream-50">
+        <div className="animate-pulse text-lavender-400 font-display text-lg">
+          Loading your journey...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <AppContext.Provider value={contextValue}>
-      {!isLoaded ? (
-        <div className="min-h-screen flex items-center justify-center bg-cream-50">
-          <div className="animate-pulse text-lavender-400 font-display text-lg">
-            Loading your journey...
-          </div>
-        </div>
-      ) : (
-        children
-      )}
+    <AppContext.Provider
+      value={{
+        data,
+        refresh,
+        setProfile,
+        logInjection,
+        updateInjection,
+        deleteInjection,
+        logNutrition,
+        updateNutrition,
+        deleteNutrition,
+        logWeight,
+        updateWeight,
+        deleteWeight,
+        logMeasurement,
+        logSideEffect,
+        setReminders,
+        clearAllData,
+        isLoaded,
+        isSaving,
+        error,
+        usingSupabase,
+      }}
+    >
+      {children}
     </AppContext.Provider>
   );
 }

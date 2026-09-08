@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { TrendChart } from "@/components/charts/Charts";
-import { formatDate, todayISO, validateLogDate, sideEffectItems } from "@/lib/utils";
+import { formatDate, todayISO, validateLogDate } from "@/lib/utils";
 import { SEVERITY_LABELS } from "@/lib/constants";
 import { SymptomLogForm } from "@/components/symptoms/SymptomLogForm";
 import {
@@ -65,7 +65,7 @@ export default function SymptomsPage() {
     .reverse()
     .map((s) => ({
       date: formatDate(s.date, "MMM d"),
-      severity: sideEffectItems(s).find((e) => e.type === "nausea")?.severity ?? 0,
+      severity: s.effects.find((e) => e.type === "nausea")?.severity ?? 0,
     }));
 
   const fatigueData = sideEffects
@@ -73,7 +73,7 @@ export default function SymptomsPage() {
     .reverse()
     .map((s) => ({
       date: formatDate(s.date, "MMM d"),
-      severity: sideEffectItems(s).find((e) => e.type === "fatigue")?.severity ?? 0,
+      severity: s.effects.find((e) => e.type === "fatigue")?.severity ?? 0,
     }));
 
   const todayHasInjection = injectionDates.has(today);

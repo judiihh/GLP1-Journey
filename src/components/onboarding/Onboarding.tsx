@@ -11,7 +11,6 @@ import type { GLP1Medication } from "@/lib/types";
 import { defaultNextInjectionDate } from "@/lib/utils";
 import { getDay, parseISO } from "date-fns";
 import { HeartPulse, ChevronRight, Sparkles } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/cn";
 import { ui } from "@/lib/ui-classes";
 
@@ -37,7 +36,7 @@ export function Onboarding() {
 
   const handleComplete = async () => {
     await setProfile({
-      id: user?.id ?? uuidv4(),
+      id: user?.id ?? crypto.randomUUID(),
       name: name || "Friend",
       medication,
       currentDosage: parseFloat(dosage),

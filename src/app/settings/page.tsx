@@ -136,12 +136,7 @@ export default function SettingsPage() {
     setTestingConnection(true);
     setConnectionStatus(null);
     try {
-      const supabase = createClient();
-      if (!supabase) {
-        setConnectionStatus("Supabase client could not be created.");
-        return;
-      }
-      const result = await testConnection(supabase);
+      const result = await testConnection(createClient());
       setConnectionStatus(result.message);
     } catch (err) {
       setConnectionStatus(

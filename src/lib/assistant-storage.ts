@@ -2,7 +2,6 @@
 
 import type { ChatMessage } from "./assistant";
 import { createClient, isSupabaseConfigured } from "./supabase/client";
-import { v4 as uuidv4 } from "uuid";
 
 const LOCAL_KEY = "glp1-assistant-messages";
 
@@ -35,8 +34,6 @@ export async function fetchAssistantMessages(
 
   try {
     const supabase = createClient();
-    if (!supabase) return loadLocal(userId);
-
     const { data, error } = await supabase
       .from("assistant_messages")
       .select("id, role, content, created_at")
@@ -65,15 +62,13 @@ export async function saveAssistantMessage(
 ): Promise<ChatMessage> {
   const stored: ChatMessage = {
     ...message,
-    id: message.id ?? uuidv4(),
+    id: message.id ?? crypto.randomUUID(),
     createdAt: message.createdAt ?? new Date().toISOString(),
   };
 
   if (userId && isSupabaseConfigured()) {
     try {
       const supabase = createClient();
-      if (!supabase) throw new Error("Supabase unavailable");
-
       const { data, error } = await supabase
         .from("assistant_messages")
         .insert({
@@ -111,7 +106,6 @@ export async function clearAssistantMessages(
 
   try {
     const supabase = createClient();
-    if (!supabase) return;
     await supabase.from("assistant_messages").delete().eq("user_id", userId);
   } catch {
     // Local copy already cleared
