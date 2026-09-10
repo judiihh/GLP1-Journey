@@ -141,16 +141,16 @@ export default function InjectionsPage() {
       />
 
       {nextConfirm && (
-        <div className="mb-6">
-          <NextInjectionConfirm
-            medicationLabel={getMedicationLabel(profile.medication)}
-            medication={profile.medication}
-            suggestedDate={nextConfirm.suggestedDate}
-            suggestedTime={nextConfirm.suggestedTime}
-            onConfirm={handleConfirmNext}
-            isSaving={isSaving}
-          />
-        </div>
+        <NextInjectionConfirm
+          open
+          medicationLabel={getMedicationLabel(profile.medication)}
+          medication={profile.medication}
+          suggestedDate={nextConfirm.suggestedDate}
+          suggestedTime={nextConfirm.suggestedTime}
+          onConfirm={handleConfirmNext}
+          onClose={() => setNextConfirm(null)}
+          isSaving={isSaving}
+        />
       )}
 
       <div className="grid sm:grid-cols-3 gap-4 mb-6">

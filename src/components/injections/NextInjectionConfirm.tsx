@@ -1,28 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { formatDate, getInjectionIntervalDays, validateNextInjectionDate } from "@/lib/utils";
+import { Modal } from "@/components/ui/Modal";
+import {
+  formatDate,
+  getInjectionIntervalDays,
+  validateNextInjectionDate,
+} from "@/lib/utils";
 import type { GLP1Medication } from "@/lib/types";
 import { Calendar, CheckCircle2 } from "lucide-react";
 
 interface NextInjectionConfirmProps {
+  open: boolean;
   medicationLabel: string;
   medication: GLP1Medication;
   suggestedDate: string;
   suggestedTime: string;
   onConfirm: (nextDate: string, nextTime: string) => Promise<void>;
+  onClose: () => void;
   isSaving: boolean;
 }
 
 export function NextInjectionConfirm({
+  open,
   medicationLabel,
   medication,
   suggestedDate,
   suggestedTime,
   onConfirm,
+  onClose,
   isSaving,
 }: NextInjectionConfirmProps) {
   const [nextDate, setNextDate] = useState(suggestedDate);
@@ -31,22 +39,63 @@ export function NextInjectionConfirm({
 
   const intervalDays = getInjectionIntervalDays(medication);
 
+  useEffect(() => {
+    if (open) {
+      setNextDate(suggestedDate);
+      setNextTime(suggestedTime);
+    }
+  }, [open, suggestedDate, suggestedTime]);
+
+  const handleConfirm = async (date: string, time: string) => {
+    await onConfirm(date, time);
+  };
+
   return (
-    <Card className="border-turquoise-200 bg-gradient-to-br from-turquoise-50/80 to-lavender-50/50">
-      <CardHeader
-        title="Confirm next injection"
-        subtitle={`Based on your ${intervalDays}-day ${medicationLabel} schedule`}
-      />
-      <div className="space-y-4">
-        <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-turquoise-100">
-          <CheckCircle2 className="w-5 h-5 text-turquoise-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-gray-700 leading-relaxed">
-            Your scheduled dose is complete. Confirm when you&apos;d like your next
-            injection — you can adjust the date or time below.
-          </p>
+    <Modal
+      open={open}
+      onClose={onClose}
+      preventClose={isSaving}
+      title="Schedule next injection"
+      subtitle={`Based on your ${intervalDays}-day ${medicationLabel} schedule`}
+      ariaLabel="Schedule next injection"
+      footer={
+        <div className="flex flex-col gap-2.5">
+          <Button
+            type="button"
+            size="lg"
+            className="w-full"
+            loading={isSaving}
+            disabled={Boolean(dateError)}
+            onClick={() => handleConfirm(nextDate, nextTime)}
+          >
+            Schedule next injection
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            className="w-full"
+            disabled={isSaving}
+            onClick={() => handleConfirm(suggestedDate, suggestedTime)}
+          >
+            Keep suggested schedule
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        <div className="flex items-start gap-3 rounded-xl border border-turquoise-100 bg-gradient-to-br from-turquoise-50/90 to-lavender-50/60 p-4">
+          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-turquoise-500" />
+          <div>
+            <p className="font-medium text-gray-800">Injection logged successfully</p>
+            <p className="mt-1 text-sm leading-relaxed text-gray-600">
+              Confirm when you&apos;d like your next injection. You can adjust the
+              date or time below.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="Next injection date"
             type="date"
@@ -61,36 +110,19 @@ export function NextInjectionConfirm({
           />
         </div>
 
-        {dateError && (
-          <p className="text-sm text-rose-600">{dateError}</p>
-        )}
+        {dateError && <p className="text-sm text-rose-600">{dateError}</p>}
 
-        <p className="text-xs text-gray-500 flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 shrink-0" />
-          Next: {formatDate(nextDate, "EEEE, MMM d")}
-          {nextTime ? ` at ${nextTime}` : ""}
+        <p className="flex items-center gap-1.5 text-sm text-gray-600">
+          <Calendar className="h-4 w-4 shrink-0 text-lavender-500" />
+          <span>
+            Next:{" "}
+            <span className="font-medium text-gray-800">
+              {formatDate(nextDate, "EEEE, MMM d")}
+              {nextTime ? ` at ${nextTime}` : ""}
+            </span>
+          </span>
         </p>
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button
-            type="button"
-            className="flex-1"
-            loading={isSaving}
-            disabled={Boolean(dateError)}
-            onClick={() => onConfirm(nextDate, nextTime)}
-          >
-            Confirm next injection
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onConfirm(suggestedDate, suggestedTime)}
-            disabled={isSaving}
-          >
-            Keep suggested schedule
-          </Button>
-        </div>
       </div>
-    </Card>
+    </Modal>
   );
 }
