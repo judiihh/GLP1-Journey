@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import {
   formatDate,
+  formatTimeDisplay,
   getInjectionIntervalDays,
   validateNextInjectionDate,
 } from "@/lib/utils";
 import type { GLP1Medication } from "@/lib/types";
-import { Calendar, CheckCircle2 } from "lucide-react";
+import { Calendar, CheckCircle2, Sparkles } from "lucide-react";
 
 interface NextInjectionConfirmProps {
   open: boolean;
@@ -63,7 +64,7 @@ export function NextInjectionConfirm({
           <Button
             type="button"
             size="lg"
-            className="w-full"
+            className="w-full shadow-soft"
             loading={isSaving}
             disabled={Boolean(dateError)}
             onClick={() => handleConfirm(nextDate, nextTime)}
@@ -74,7 +75,7 @@ export function NextInjectionConfirm({
             type="button"
             variant="ghost"
             size="lg"
-            className="w-full"
+            className="w-full text-gray-500"
             disabled={isSaving}
             onClick={() => handleConfirm(suggestedDate, suggestedTime)}
           >
@@ -84,14 +85,21 @@ export function NextInjectionConfirm({
       }
     >
       <div className="space-y-5">
-        <div className="flex items-start gap-3 rounded-xl border border-turquoise-100 bg-gradient-to-br from-turquoise-50/90 to-lavender-50/60 p-4">
-          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-turquoise-500" />
-          <div>
-            <p className="font-medium text-gray-800">Injection logged successfully</p>
-            <p className="mt-1 text-sm leading-relaxed text-gray-600">
-              Confirm when you&apos;d like your next injection. You can adjust the
-              date or time below.
-            </p>
+        <div className="relative overflow-hidden rounded-2xl border border-turquoise-100/80 bg-gradient-to-br from-turquoise-50 via-white to-lavender-50/80 p-4 shadow-sm">
+          <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-turquoise-200/30 blur-2xl" />
+          <div className="relative flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-turquoise-100/80 ring-4 ring-turquoise-50">
+              <CheckCircle2 className="h-5 w-5 text-turquoise-600" />
+            </div>
+            <div>
+              <p className="font-display font-semibold text-gray-800">
+                Injection logged successfully
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-gray-600">
+                Confirm when you&apos;d like your next injection. You can adjust
+                the date or time below.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -112,16 +120,23 @@ export function NextInjectionConfirm({
 
         {dateError && <p className="text-sm text-rose-600">{dateError}</p>}
 
-        <p className="flex items-center gap-1.5 text-sm text-gray-600">
-          <Calendar className="h-4 w-4 shrink-0 text-lavender-500" />
-          <span>
-            Next:{" "}
-            <span className="font-medium text-gray-800">
-              {formatDate(nextDate, "EEEE, MMM d")}
-              {nextTime ? ` at ${nextTime}` : ""}
+        <div className="rounded-2xl border border-lavender-100/80 bg-gradient-to-r from-lavender-50/70 to-rose-50/50 px-4 py-3.5">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-lavender-500">
+            <Sparkles className="h-3.5 w-3.5" />
+            Upcoming dose
+          </p>
+          <p className="flex items-center gap-2 text-sm text-gray-700">
+            <Calendar className="h-4 w-4 shrink-0 text-rose-400" />
+            <span>
+              <span className="font-display font-semibold text-gray-800">
+                {formatDate(nextDate, "EEEE, MMM d")}
+              </span>
+              {nextTime ? (
+                <span className="text-gray-600">{` at ${formatTimeDisplay(nextTime)}`}</span>
+              ) : null}
             </span>
-          </span>
-        </p>
+          </p>
+        </div>
       </div>
     </Modal>
   );

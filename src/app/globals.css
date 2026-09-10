@@ -81,9 +81,13 @@
   animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.animate-scale-in {
+  animation: scale-in 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @media (min-width: 640px) {
   .sm\:animate-scale-in {
-    animation: scale-in 0.2s ease-out;
+    animation: scale-in 0.24s cubic-bezier(0.32, 0.72, 0, 1);
   }
 }
 

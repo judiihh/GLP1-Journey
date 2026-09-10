@@ -3,6 +3,7 @@ import {
   differenceInDays,
   format,
   getDay,
+  parse,
   parseISO,
   startOfDay,
   subDays,
@@ -23,6 +24,16 @@ import { mealPlanTotals, scaleMealsToCalorieGoal } from "./meal-plan-shared";
 export function formatDate(date: string | Date, fmt = "MMM d, yyyy"): string {
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, fmt);
+}
+
+/** Display HH:mm storage values as 12-hour time (e.g. "2:20 PM"). */
+export function formatTimeDisplay(time: string): string {
+  if (!time) return "";
+  try {
+    return format(parse(time, "HH:mm", new Date()), "h:mm a");
+  } catch {
+    return time;
+  }
 }
 
 export function todayISO(): string {
