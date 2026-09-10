@@ -42,6 +42,12 @@ export function validateLogDate(date: string): string | null {
   return null;
 }
 
+export function validateNextInjectionDate(date: string): string | null {
+  if (!date) return "Please choose a date.";
+  if (date < todayISO()) return "Next injection must be today or later.";
+  return null;
+}
+
 export function mergeMeasurementLog(
   existing: MeasurementLog | undefined,
   incoming: MeasurementLog
@@ -81,10 +87,60 @@ export function advanceNextInjectionDate(
 
 export function profileWithNextInjectionFromLog(
   profile: UserProfile,
-  injectionDate: string
+  injectionDate: string,
+  medication: GLP1Medication = profile.medication
 ): UserProfile {
   const nextInjectionDate = advanceNextInjectionDate(
     injectionDate,
+    medication
+  );
+  return {
+    ...profile,
+    nextInjectionDate,
+    injectionDay: getDay(parseISO(nextInjectionDate)),
+  };
+}
+
+export function getLastRelevantInjection(
+  profile: UserProfile,
+  injections: AppData["injections"]
+): AppData["injections"][0] | null {
+  if (injections.length === 0) return null;
+  const sameMed = injections.filter((i) => i.medication === profile.medication);
+  const pool = sameMed.length > 0 ? sameMed : injections;
+  return pool.reduce((latest, current) =>
+    current.date > latest.date ? current : latest
+  );
+}
+
+export function hasCompletedScheduledInjection(
+  profile: UserProfile,
+  injections: AppData["injections"]
+): boolean {
+  if (!profile.nextInjectionDate) return false;
+  const last = getLastRelevantInjection(profile, injections);
+  if (!last) return false;
+  const scheduled = startOfDay(parseISO(profile.nextInjectionDate));
+  const lastDate = startOfDay(parseISO(last.date));
+  return lastDate >= scheduled;
+}
+
+export function getSuggestedNextInjectionDate(
+  profile: UserProfile,
+  injectionDate: string,
+  medication: GLP1Medication = profile.medication
+): string {
+  return advanceNextInjectionDate(injectionDate, medication);
+}
+
+export function recalculateProfileFromInjections(
+  profile: UserProfile,
+  injections: AppData["injections"]
+): UserProfile {
+  const last = getLastRelevantInjection(profile, injections);
+  if (!last) return profile;
+  const nextInjectionDate = advanceNextInjectionDate(
+    last.date,
     profile.medication
   );
   return {
@@ -96,9 +152,10 @@ export function profileWithNextInjectionFromLog(
 
 export function formatInjectionCountdown(daysUntil: number | null): string {
   if (daysUntil === null) return "Not scheduled";
-  if (daysUntil < 0) return "Overdue";
-  if (daysUntil === 0) return "Today!";
-  return `In ${daysUntil} day${daysUntil > 1 ? "s" : ""}`;
+  if (daysUntil < 0) return `${Math.abs(daysUntil)} day${Math.abs(daysUntil) === 1 ? "" : "s"} overdue`;
+  if (daysUntil === 0) return "Due today";
+  if (daysUntil === 1) return "Due tomorrow";
+  return `Due in ${daysUntil} days`;
 }
 
 export function getMedicationLabel(id: string): string {
@@ -116,18 +173,34 @@ export function getNextInjectionDate(
   if (!profile) return null;
   const today = startOfDay(new Date());
   const interval = getInjectionIntervalDays(profile.medication);
+  const lastInjection = getLastRelevantInjection(profile, injections);
+  const scheduled = profile.nextInjectionDate
+    ? startOfDay(parseISO(profile.nextInjectionDate))
+    : null;
 
-  if (profile.nextInjectionDate) {
-    return startOfDay(parseISO(profile.nextInjectionDate));
+  // Scheduled dose logged — next date comes from the injection, not stale profile field.
+  if (lastInjection && scheduled) {
+    const lastDate = startOfDay(parseISO(lastInjection.date));
+    if (lastDate >= scheduled) {
+      return startOfDay(
+        parseISO(
+          advanceNextInjectionDate(lastInjection.date, profile.medication)
+        )
+      );
+    }
+    return scheduled;
   }
 
-  const lastInjection = injections.length > 0 ? injections[0] : null;
+  if (scheduled) {
+    return scheduled;
+  }
+
   if (lastInjection) {
     let next = addDays(parseISO(lastInjection.date), interval);
     while (next < today) {
       next = addDays(next, interval);
     }
-    return next;
+    return startOfDay(next);
   }
 
   // Legacy: next occurrence of injectionDay weekday

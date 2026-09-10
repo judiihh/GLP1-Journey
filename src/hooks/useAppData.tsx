@@ -49,7 +49,10 @@ import {
   clearAllData as localClearAllData,
 } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
-import { profileWithNextInjectionFromLog } from "@/lib/utils";
+import {
+  profileWithNextInjectionFromLog,
+  recalculateProfileFromInjections,
+} from "@/lib/utils";
 
 interface AppContextValue {
   data: AppData;
@@ -202,14 +205,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             user.id,
             injection
           );
-          setData((prev) => ({
-            ...prev,
-            injections: prev.injections.map((i) =>
+          let profileUpdate: UserProfile | null = null;
+          setData((prev) => {
+            const injections = prev.injections.map((i) =>
               i.id === saved.id ? saved : i
-            ),
-          }));
+            );
+            if (prev.profile) {
+              profileUpdate = recalculateProfileFromInjections(
+                prev.profile,
+                injections
+              );
+            }
+            return {
+              ...prev,
+              injections,
+              profile: profileUpdate ?? prev.profile,
+            };
+          });
+          if (profileUpdate) {
+            await upsertProfile(supabase, profileUpdate);
+          }
         } else {
-          setData(localUpdateInjection(injection));
+          setData((prev) => {
+            const next = localUpdateInjection(injection);
+            if (next.profile) {
+              return {
+                ...next,
+                profile: recalculateProfileFromInjections(
+                  next.profile,
+                  next.injections
+                ),
+              };
+            }
+            return next;
+          });
         }
       } catch (err) {
         setError(
@@ -230,12 +259,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         if (usingSupabase && supabase && user) {
           await supabaseDeleteInjection(supabase, user.id, id);
-          setData((prev) => ({
-            ...prev,
-            injections: prev.injections.filter((i) => i.id !== id),
-          }));
+          let profileUpdate: UserProfile | null = null;
+          setData((prev) => {
+            const injections = prev.injections.filter((i) => i.id !== id);
+            if (prev.profile) {
+              profileUpdate = recalculateProfileFromInjections(
+                prev.profile,
+                injections
+              );
+            }
+            return {
+              ...prev,
+              injections,
+              profile: profileUpdate ?? prev.profile,
+            };
+          });
+          if (profileUpdate) {
+            await upsertProfile(supabase, profileUpdate);
+          }
         } else {
-          setData(localDeleteInjection(id));
+          setData((prev) => {
+            const next = localDeleteInjection(id);
+            if (next.profile) {
+              return {
+                ...next,
+                profile: recalculateProfileFromInjections(
+                  next.profile,
+                  next.injections
+                ),
+              };
+            }
+            return next;
+          });
         }
       } catch (err) {
         setError(
@@ -624,7 +679,11 @@ function mergeProfileAfterInjection(
   profile: UserProfile,
   injection: AppData["injections"][0]
 ): UserProfile {
-  let updated = profileWithNextInjectionFromLog(profile, injection.date);
+  let updated = profileWithNextInjectionFromLog(
+    profile,
+    injection.date,
+    injection.medication
+  );
   if (prevNeedsDosageUpdate(injection, profile)) {
     updated = { ...updated, currentDosage: injection.dosage };
   }

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { getDay, parseISO } from "date-fns";
 import { useApp } from "@/hooks/useAppData";
 import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { BodyMap } from "@/components/charts/Charts";
+import { NextInjectionConfirm } from "@/components/injections/NextInjectionConfirm";
 import {
   formatDate,
   formatInjectionCountdown,
@@ -16,6 +18,8 @@ import {
   getNextInjectionLabel,
   getSiteLabel,
   getSiteRotationStatus,
+  getSuggestedNextInjectionDate,
+  hasCompletedScheduledInjection,
   suggestNextInjectionSite,
   todayISO,
   validateLogDate,
@@ -24,11 +28,11 @@ import { INJECTION_SITES, MEDICATIONS } from "@/lib/constants";
 import type { GLP1Medication, InjectionSite } from "@/lib/types";
 import { ui } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
-import { Syringe, MapPin, CheckCircle2 } from "lucide-react";
+import { Syringe, MapPin } from "lucide-react";
 import { InjectionHistoryItem } from "@/components/injections/InjectionHistoryItem";
 
 export default function InjectionsPage() {
-  const { data, logInjection, updateInjection, deleteInjection, isSaving } =
+  const { data, logInjection, updateInjection, deleteInjection, setProfile, isSaving } =
     useApp();
   const { profile, injections } = data;
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +47,10 @@ export default function InjectionsPage() {
   );
   const [notes, setNotes] = useState("");
   const [dosageChanged, setDosageChanged] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [nextConfirm, setNextConfirm] = useState<{
+    suggestedDate: string;
+    suggestedTime: string;
+  } | null>(null);
   const today = todayISO();
   const dateError = validateLogDate(date);
 
@@ -54,12 +61,26 @@ export default function InjectionsPage() {
   const siteStatus = getSiteRotationStatus(injections);
   const daysUntil = getDaysUntilInjection(profile, injections);
   const nextInjectionLabel = getNextInjectionLabel(profile, injections);
+  const doseComplete = hasCompletedScheduledInjection(profile, injections);
 
   const openForm = () => {
     setMedication(profile.medication);
     setDosage(String(profile.currentDosage));
     setSite(suggestedSite);
+    setDate(todayISO());
+    setTime(profile.injectionTime || new Date().toTimeString().slice(0, 5));
+    setNextConfirm(null);
     setShowForm(true);
+  };
+
+  const handleConfirmNext = async (nextDate: string, nextTime: string) => {
+    await setProfile({
+      ...profile,
+      nextInjectionDate: nextDate,
+      injectionTime: nextTime,
+      injectionDay: getDay(parseISO(nextDate)),
+    });
+    setNextConfirm(null);
   };
 
   const handleMedicationChange = (id: GLP1Medication) => {
@@ -91,13 +112,19 @@ export default function InjectionsPage() {
         changed && isCurrentProfileMed ? profile.currentDosage : undefined,
     });
 
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      setShowForm(false);
-      setNotes("");
-      setDosageChanged(false);
-    }, 2000);
+    const suggestedDate = getSuggestedNextInjectionDate(
+      profile,
+      date,
+      medication
+    );
+
+    setNextConfirm({
+      suggestedDate,
+      suggestedTime: time || profile.injectionTime,
+    });
+    setShowForm(false);
+    setNotes("");
+    setDosageChanged(false);
   };
 
   return (
@@ -113,6 +140,19 @@ export default function InjectionsPage() {
         }
       />
 
+      {nextConfirm && (
+        <div className="mb-6">
+          <NextInjectionConfirm
+            medicationLabel={getMedicationLabel(profile.medication)}
+            medication={profile.medication}
+            suggestedDate={nextConfirm.suggestedDate}
+            suggestedTime={nextConfirm.suggestedTime}
+            onConfirm={handleConfirmNext}
+            isSaving={isSaving}
+          />
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <Card>
           <p className="text-xs text-gray-500">Next injection</p>
@@ -120,7 +160,15 @@ export default function InjectionsPage() {
             {formatInjectionCountdown(daysUntil)}
           </p>
           {nextInjectionLabel && (
-            <p className="text-xs text-lavender-500 mt-0.5">{nextInjectionLabel}</p>
+            <p className="text-xs text-lavender-500 mt-0.5">
+              {nextInjectionLabel}
+              {profile.injectionTime ? ` at ${profile.injectionTime}` : ""}
+            </p>
+          )}
+          {doseComplete && daysUntil !== null && daysUntil > 0 && (
+            <p className="text-xs text-turquoise-600 mt-1.5">
+              Current dose completed
+            </p>
           )}
         </Card>
         <Card>
@@ -155,13 +203,7 @@ export default function InjectionsPage() {
               title="Log new injection"
               subtitle="Medication defaults to your profile — change it for past or switched doses"
             />
-            {saved ? (
-              <div className="flex flex-col items-center py-8 text-turquoise-500">
-                <CheckCircle2 className="w-12 h-12 mb-3" />
-                <p className="font-medium">Injection logged successfully!</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Medication used
@@ -270,7 +312,6 @@ export default function InjectionsPage() {
                   Save injection
                 </Button>
               </form>
-            )}
           </Card>
         ) : (
           <Card>

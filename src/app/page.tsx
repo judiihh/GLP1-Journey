@@ -11,11 +11,13 @@ import {
   formatDate,
   formatInjectionCountdown,
   getDaysUntilInjection,
+  getLastRelevantInjection,
   getMedicationLabel,
   getNextInjectionLabel,
   getNutritionAverages,
   getTreatmentConsistency,
   getWeightProgress,
+  hasCompletedScheduledInjection,
   todayISO,
 } from "@/lib/utils";
 import {
@@ -38,6 +40,9 @@ export default function DashboardPage() {
 
   const daysUntil = getDaysUntilInjection(profile, injections);
   const nextInjectionLabel = getNextInjectionLabel(profile, injections);
+  const doseComplete = hasCompletedScheduledInjection(profile, injections);
+  const lastInjection = getLastRelevantInjection(profile, injections);
+  const loggedToday = lastInjection?.date === todayISO();
   const todayNutrition = nutrition.find((n) => n.date === todayISO());
   const weightProgress = getWeightProgress(weights);
   const consistency = getTreatmentConsistency(injections);
@@ -82,6 +87,11 @@ export default function DashboardPage() {
                 <p className="text-xs text-lavender-500 mt-0.5">
                   {nextInjectionLabel}
                   {profile.injectionTime ? ` at ${profile.injectionTime}` : ""}
+                </p>
+              )}
+              {loggedToday && doseComplete && daysUntil !== null && daysUntil > 0 && (
+                <p className="text-xs text-turquoise-600 mt-1">
+                  Today&apos;s dose logged — counting down to your next one
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-0.5">
