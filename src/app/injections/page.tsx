@@ -13,6 +13,7 @@ import { NextInjectionConfirm } from "@/components/injections/NextInjectionConfi
 import {
   formatDate,
   formatInjectionCountdown,
+  formatTimeDisplay,
   getDaysUntilInjection,
   getMedicationLabel,
   getNextInjectionLabel,
@@ -162,7 +163,9 @@ export default function InjectionsPage() {
           {nextInjectionLabel && (
             <p className="text-xs text-lavender-500 mt-0.5">
               {nextInjectionLabel}
-              {profile.injectionTime ? ` at ${profile.injectionTime}` : ""}
+              {profile.injectionTime
+                ? ` at ${formatTimeDisplay(profile.injectionTime)}`
+                : ""}
             </p>
           )}
           {doseComplete && daysUntil !== null && daysUntil > 0 && (

@@ -10,6 +10,7 @@ import { TrendChart } from "@/components/charts/Charts";
 import {
   formatDate,
   formatInjectionCountdown,
+  formatTimeDisplay,
   getDaysUntilInjection,
   getLastRelevantInjection,
   getMedicationLabel,
@@ -86,7 +87,9 @@ export default function DashboardPage() {
               {nextInjectionLabel && (
                 <p className="text-xs text-lavender-500 mt-0.5">
                   {nextInjectionLabel}
-                  {profile.injectionTime ? ` at ${profile.injectionTime}` : ""}
+                  {profile.injectionTime
+                    ? ` at ${formatTimeDisplay(profile.injectionTime)}`
+                    : ""}
                 </p>
               )}
               {loggedToday && doseComplete && daysUntil !== null && daysUntil > 0 && (
