@@ -27,6 +27,7 @@ create table if not exists public.profiles (
   exclude_pork boolean not null default true,
   exclude_duck boolean not null default true,
   onboarding_complete boolean not null default false,
+  injection_medication_doses jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -44,6 +45,7 @@ create table if not exists public.injections (
   notes text,
   dosage_changed boolean not null default false,
   previous_dosage numeric,
+  medication_doses jsonb,
   created_at timestamptz not null default now()
 );
 

@@ -19,6 +19,18 @@ const defaultReminders: ReminderSettings = {
   time: "09:00",
 };
 
+function isMissingMultiDoseColumnError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  const msg = error.message ?? "";
+  return (
+    error.code === "PGRST204" ||
+    msg.includes("injection_medication_doses") ||
+    msg.includes("medication_doses")
+  );
+}
+
 // --- Row types (snake_case from DB) ---
 
 interface ProfileRow {
@@ -346,14 +358,20 @@ export async function upsertProfile(
   supabase: SupabaseClient,
   profile: UserProfile
 ): Promise<UserProfile> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .upsert(profileToRow(profile))
-    .select("*")
-    .single();
+  const row = profileToRow(profile);
+  let result = await supabase.from("profiles").upsert(row).select("*").single();
 
-  if (error) throw error;
-  return mapProfile(data as ProfileRow);
+  if (result.error && isMissingMultiDoseColumnError(result.error)) {
+    const { injection_medication_doses: _removed, ...legacyRow } = row;
+    result = await supabase
+      .from("profiles")
+      .upsert(legacyRow)
+      .select("*")
+      .single();
+  }
+
+  if (result.error) throw result.error;
+  return mapProfile(result.data as ProfileRow);
 }
 
 export async function insertInjection(
@@ -361,27 +379,30 @@ export async function insertInjection(
   userId: string,
   injection: InjectionLog
 ): Promise<InjectionLog> {
-  const { data, error } = await supabase
-    .from("injections")
-    .insert({
-      id: injection.id,
-      user_id: userId,
-      date: injection.date,
-      time: injection.time,
-      medication: injection.medication,
-      dosage: injection.dosage,
-      dosage_unit: injection.dosageUnit,
-      site: injection.site,
-      notes: injection.notes ?? null,
-      dosage_changed: injection.dosageChanged ?? false,
-      previous_dosage: injection.previousDosage ?? null,
-      medication_doses: injection.medicationDoses ?? null,
-    })
-    .select("*")
-    .single();
+  const payload = {
+    id: injection.id,
+    user_id: userId,
+    date: injection.date,
+    time: injection.time,
+    medication: injection.medication,
+    dosage: injection.dosage,
+    dosage_unit: injection.dosageUnit,
+    site: injection.site,
+    notes: injection.notes ?? null,
+    dosage_changed: injection.dosageChanged ?? false,
+    previous_dosage: injection.previousDosage ?? null,
+    medication_doses: injection.medicationDoses ?? null,
+  };
 
-  if (error) throw error;
-  return mapInjection(data as InjectionRow);
+  let result = await supabase.from("injections").insert(payload).select("*").single();
+
+  if (result.error && isMissingMultiDoseColumnError(result.error)) {
+    const { medication_doses: _removed, ...legacyPayload } = payload;
+    result = await supabase.from("injections").insert(legacyPayload).select("*").single();
+  }
+
+  if (result.error) throw result.error;
+  return mapInjection(result.data as InjectionRow);
 }
 
 export async function updateInjection(
@@ -389,27 +410,40 @@ export async function updateInjection(
   userId: string,
   injection: InjectionLog
 ): Promise<InjectionLog> {
-  const { data, error } = await supabase
+  const payload = {
+    date: injection.date,
+    time: injection.time,
+    medication: injection.medication,
+    dosage: injection.dosage,
+    dosage_unit: injection.dosageUnit,
+    site: injection.site,
+    notes: injection.notes ?? null,
+    dosage_changed: injection.dosageChanged ?? false,
+    previous_dosage: injection.previousDosage ?? null,
+    medication_doses: injection.medicationDoses ?? null,
+  };
+
+  let result = await supabase
     .from("injections")
-    .update({
-      date: injection.date,
-      time: injection.time,
-      medication: injection.medication,
-      dosage: injection.dosage,
-      dosage_unit: injection.dosageUnit,
-      site: injection.site,
-      notes: injection.notes ?? null,
-      dosage_changed: injection.dosageChanged ?? false,
-      previous_dosage: injection.previousDosage ?? null,
-      medication_doses: injection.medicationDoses ?? null,
-    })
+    .update(payload)
     .eq("id", injection.id)
     .eq("user_id", userId)
     .select("*")
     .single();
 
-  if (error) throw error;
-  return mapInjection(data as InjectionRow);
+  if (result.error && isMissingMultiDoseColumnError(result.error)) {
+    const { medication_doses: _removed, ...legacyPayload } = payload;
+    result = await supabase
+      .from("injections")
+      .update(legacyPayload)
+      .eq("id", injection.id)
+      .eq("user_id", userId)
+      .select("*")
+      .single();
+  }
+
+  if (result.error) throw result.error;
+  return mapInjection(result.data as InjectionRow);
 }
 
 export async function deleteInjection(
