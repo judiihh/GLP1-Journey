@@ -2,10 +2,20 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input, Select, Textarea } from "@/components/ui/Input";
-import { formatDate, getMedicationLabel, getSiteLabel, todayISO, validateLogDate } from "@/lib/utils";
-import { INJECTION_SITES, MEDICATIONS } from "@/lib/constants";
-import type { GLP1Medication, InjectionLog, InjectionSite, UserProfile } from "@/lib/types";
+import { Input, Textarea } from "@/components/ui/Input";
+import { InjectionMedicationDosesEditor } from "@/components/injections/InjectionMedicationDosesEditor";
+import {
+  buildInjectionLogFromDoses,
+  formatDate,
+  formatInjectionDosesSummary,
+  formatTimeDisplay,
+  getInjectionDoses,
+  getSiteLabel,
+  todayISO,
+  validateLogDate,
+} from "@/lib/utils";
+import { INJECTION_SITES } from "@/lib/constants";
+import type { InjectionLog, InjectionMedicationDose, UserProfile } from "@/lib/types";
 import { ui } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import { Syringe, MapPin, Pencil, Trash2, Check, X } from "lucide-react";
@@ -26,58 +36,45 @@ export function InjectionHistoryItem({
   isSaving,
 }: InjectionHistoryItemProps) {
   const [editing, setEditing] = useState(false);
-  const [medication, setMedication] = useState(injection.medication);
+  const [medicationDoses, setMedicationDoses] = useState<InjectionMedicationDose[]>(
+    getInjectionDoses(injection)
+  );
   const [date, setDate] = useState(injection.date);
   const [time, setTime] = useState(injection.time);
-  const [dosage, setDosage] = useState(String(injection.dosage));
   const [site, setSite] = useState(injection.site);
   const [notes, setNotes] = useState(injection.notes ?? "");
-  const [dosageChanged, setDosageChanged] = useState(
-    injection.dosageChanged ?? false
-  );
-
-  const selectedMed = MEDICATIONS.find((m) => m.id === medication)!;
 
   const resetForm = () => {
-    setMedication(injection.medication);
+    setMedicationDoses(getInjectionDoses(injection));
     setDate(injection.date);
     setTime(injection.time);
-    setDosage(String(injection.dosage));
     setSite(injection.site);
     setNotes(injection.notes ?? "");
-    setDosageChanged(injection.dosageChanged ?? false);
-  };
-
-  const handleMedicationChange = (id: GLP1Medication) => {
-    setMedication(id);
-    const med = MEDICATIONS.find((m) => m.id === id)!;
-    if (!med.commonDosages.includes(parseFloat(dosage))) {
-      setDosage(String(med.commonDosages[0]));
-    }
   };
 
   const handleSave = async () => {
     if (validateLogDate(date)) return;
-    await onUpdate({
-      ...injection,
-      medication,
-      date,
-      time,
-      dosage: parseFloat(dosage),
-      dosageUnit: selectedMed.defaultUnit,
-      site,
-      notes: notes || undefined,
-      dosageChanged:
-        medication === profile.medication ? dosageChanged : false,
-      previousDosage: injection.previousDosage,
-    });
+    await onUpdate(
+      buildInjectionLogFromDoses(
+        {
+          ...injection,
+          date,
+          time,
+          site,
+          notes: notes || undefined,
+          dosageChanged: injection.dosageChanged,
+          previousDosage: injection.previousDosage,
+        },
+        medicationDoses
+      )
+    );
     setEditing(false);
   };
 
   const handleDelete = async () => {
     if (
       !confirm(
-        `Delete this ${getMedicationLabel(injection.medication)} injection from ${formatDate(injection.date)}?`
+        `Delete this injection from ${formatDate(injection.date)}?`
       )
     ) {
       return;
@@ -89,6 +86,8 @@ export function InjectionHistoryItem({
     resetForm();
     setEditing(false);
   };
+
+  const dosesSummary = formatInjectionDosesSummary(getInjectionDoses(injection));
 
   if (editing) {
     return (
@@ -105,26 +104,11 @@ export function InjectionHistoryItem({
           </button>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Medication used
-          </label>
-          <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto">
-            {MEDICATIONS.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => handleMedicationChange(m.id)}
-                className={cn(
-                  "p-2 rounded-xl border-2 text-left text-xs transition-all",
-                  medication === m.id ? ui.selectableActive : ui.selectableIdle
-                )}
-              >
-                <p className="font-semibold text-gray-800">{m.brand}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+        <InjectionMedicationDosesEditor
+          doses={medicationDoses}
+          onChange={setMedicationDoses}
+          compact
+        />
 
         <div className="grid grid-cols-2 gap-3">
           <Input
@@ -142,16 +126,6 @@ export function InjectionHistoryItem({
             onChange={(e) => setTime(e.target.value)}
           />
         </div>
-
-        <Select
-          label="Dosage"
-          value={dosage}
-          onChange={(e) => setDosage(e.target.value)}
-          options={selectedMed.commonDosages.map((d) => ({
-            value: String(d),
-            label: `${d} ${selectedMed.defaultUnit}`,
-          }))}
-        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -174,18 +148,6 @@ export function InjectionHistoryItem({
             ))}
           </div>
         </div>
-
-        {medication === profile.medication && (
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={dosageChanged}
-              onChange={(e) => setDosageChanged(e.target.checked)}
-              className="rounded border-lavender-300"
-            />
-            Mark as dosage change on profile
-          </label>
-        )}
 
         <Textarea
           label="Notes"
@@ -219,17 +181,16 @@ export function InjectionHistoryItem({
             <Syringe className="w-5 h-5 text-lavender-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm text-gray-800 break-words">
-              {getMedicationLabel(injection.medication)} · {injection.dosage}{" "}
-              {injection.dosageUnit}
+            <p className="font-medium text-sm text-gray-800 break-words leading-snug">
+              {dosesSummary}
               {injection.dosageChanged && (
                 <span className="ml-2 text-xs bg-rose-200/80 text-rose-700 px-2 py-0.5 rounded-full whitespace-nowrap">
                   Dosage change
                 </span>
               )}
             </p>
-            <p className="text-xs text-gray-500 break-words">
-              {formatDate(injection.date)} at {injection.time} ·{" "}
+            <p className="text-xs text-gray-500 break-words mt-0.5">
+              {formatDate(injection.date)} at {formatTimeDisplay(injection.time)} ·{" "}
               {getSiteLabel(injection.site)}
             </p>
           </div>

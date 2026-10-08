@@ -43,6 +43,7 @@ interface ProfileRow {
   exclude_duck: boolean | null;
   onboarding_complete: boolean;
   created_at: string;
+  injection_medication_doses: InjectionLog["medicationDoses"] | null;
 }
 
 interface InjectionRow {
@@ -57,6 +58,7 @@ interface InjectionRow {
   notes: string | null;
   dosage_changed: boolean;
   previous_dosage: number | null;
+  medication_doses: InjectionLog["medicationDoses"] | null;
 }
 
 interface NutritionRow {
@@ -147,6 +149,7 @@ function mapProfile(row: ProfileRow): UserProfile {
     excludeDuck: row.exclude_duck ?? undefined,
     onboardingComplete: row.onboarding_complete,
     createdAt: row.created_at,
+    injectionMedicationDoses: row.injection_medication_doses ?? undefined,
   });
 }
 
@@ -172,6 +175,7 @@ function profileToRow(profile: UserProfile) {
     exclude_pork: profile.excludePork ?? true,
     exclude_duck: profile.excludeDuck ?? true,
     onboarding_complete: profile.onboardingComplete,
+    injection_medication_doses: profile.injectionMedicationDoses ?? null,
   };
 }
 
@@ -187,6 +191,7 @@ function mapInjection(row: InjectionRow): InjectionLog {
     notes: row.notes ?? undefined,
     dosageChanged: row.dosage_changed,
     previousDosage: row.previous_dosage ?? undefined,
+    medicationDoses: row.medication_doses ?? undefined,
   };
 }
 
@@ -370,6 +375,7 @@ export async function insertInjection(
       notes: injection.notes ?? null,
       dosage_changed: injection.dosageChanged ?? false,
       previous_dosage: injection.previousDosage ?? null,
+      medication_doses: injection.medicationDoses ?? null,
     })
     .select("*")
     .single();
@@ -395,6 +401,7 @@ export async function updateInjection(
       notes: injection.notes ?? null,
       dosage_changed: injection.dosageChanged ?? false,
       previous_dosage: injection.previousDosage ?? null,
+      medication_doses: injection.medicationDoses ?? null,
     })
     .eq("id", injection.id)
     .eq("user_id", userId)

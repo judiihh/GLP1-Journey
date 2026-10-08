@@ -50,6 +50,8 @@ import {
 } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
 import {
+  applyProfileInjectionDoses,
+  getInjectionDoses,
   profileWithNextInjectionFromLog,
   recalculateProfileFromInjections,
 } from "@/lib/utils";
@@ -682,23 +684,12 @@ function mergeProfileAfterInjection(
   let updated = profileWithNextInjectionFromLog(
     profile,
     injection.date,
-    injection.medication
+    profile.medication
   );
-  if (prevNeedsDosageUpdate(injection, profile)) {
-    updated = { ...updated, currentDosage: injection.dosage };
+  if (injection.dosageChanged) {
+    updated = applyProfileInjectionDoses(updated, getInjectionDoses(injection));
   }
   return updated;
-}
-
-function prevNeedsDosageUpdate(
-  injection: AppData["injections"][0],
-  profile: UserProfile | null
-) {
-  return (
-    profile !== null &&
-    injection.medication === profile.medication &&
-    (injection.dosageChanged || injection.dosage !== profile.currentDosage)
-  );
 }
 
 export function useApp() {

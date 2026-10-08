@@ -12,6 +12,8 @@ import type {
   AppData,
   DailyMealPlan,
   GLP1Medication,
+  InjectionLog,
+  InjectionMedicationDose,
   InjectionSite,
   MealPlanItem,
   MeasurementLog,
@@ -171,6 +173,106 @@ export function formatInjectionCountdown(daysUntil: number | null): string {
 
 export function getMedicationLabel(id: string): string {
   return MEDICATIONS.find((m) => m.id === id)?.brand ?? id;
+}
+
+export function defaultMedicationDose(
+  medication: GLP1Medication = "ozempic"
+): InjectionMedicationDose {
+  const med = MEDICATIONS.find((m) => m.id === medication)!;
+  return {
+    medication,
+    dosage: med.commonDosages[0],
+    dosageUnit: med.defaultUnit,
+  };
+}
+
+export function getProfileInjectionDoses(
+  profile: UserProfile
+): InjectionMedicationDose[] {
+  if (profile.injectionMedicationDoses?.length) {
+    return profile.injectionMedicationDoses;
+  }
+  return [
+    {
+      medication: profile.medication,
+      dosage: profile.currentDosage,
+      dosageUnit: profile.dosageUnit,
+    },
+  ];
+}
+
+export function getInjectionDoses(injection: InjectionLog): InjectionMedicationDose[] {
+  if (injection.medicationDoses?.length) {
+    return injection.medicationDoses;
+  }
+  return [
+    {
+      medication: injection.medication,
+      dosage: injection.dosage,
+      dosageUnit: injection.dosageUnit,
+    },
+  ];
+}
+
+export function formatInjectionDosesSummary(
+  doses: InjectionMedicationDose[]
+): string {
+  return doses
+    .map(
+      (d) =>
+        `${getMedicationLabel(d.medication)} ${d.dosage} ${d.dosageUnit}`
+    )
+    .join(" + ");
+}
+
+export function buildInjectionLogFromDoses(
+  base: Omit<
+    InjectionLog,
+    "medication" | "dosage" | "dosageUnit" | "medicationDoses"
+  >,
+  doses: InjectionMedicationDose[]
+): InjectionLog {
+  const normalized = doses.filter((d) => d.medication && d.dosage > 0);
+  const list = normalized.length > 0 ? normalized : [defaultMedicationDose()];
+  const primary = list[0];
+  return {
+    ...base,
+    medication: primary.medication,
+    dosage: primary.dosage,
+    dosageUnit: primary.dosageUnit,
+    medicationDoses: list,
+  };
+}
+
+export function applyProfileInjectionDoses(
+  profile: UserProfile,
+  doses: InjectionMedicationDose[]
+): UserProfile {
+  const list = doses.filter((d) => d.medication && d.dosage > 0);
+  const normalized = list.length > 0 ? list : getProfileInjectionDoses(profile);
+  const primary = normalized[0];
+  return {
+    ...profile,
+    medication: primary.medication,
+    currentDosage: primary.dosage,
+    dosageUnit: primary.dosageUnit,
+    injectionMedicationDoses:
+      normalized.length > 0 ? normalized : profile.injectionMedicationDoses,
+  };
+}
+
+export function profileDosesChanged(
+  profile: UserProfile,
+  doses: InjectionMedicationDose[]
+): boolean {
+  const current = getProfileInjectionDoses(profile);
+  if (current.length !== doses.length) return true;
+  return doses.some(
+    (d, i) =>
+      d.medication !== current[i]?.medication ||
+      d.dosage !== current[i]?.dosage ||
+      d.dosageUnit !== current[i]?.dosageUnit
+  );
 }
 
 export function getSiteLabel(id: InjectionSite): string {

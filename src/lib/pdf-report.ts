@@ -9,7 +9,10 @@ import {
   getNutritionAverages,
   getTreatmentConsistency,
   getWeightProgress,
+  formatInjectionDosesSummary,
+  getInjectionDoses,
   getMedicationLabel,
+  getProfileInjectionDoses,
 } from "./utils";
 import { SIDE_EFFECTS } from "./constants";
 
@@ -47,7 +50,7 @@ export async function generateMedicalSummary(data: AppData): Promise<void> {
   doc.text(`Name: ${profile.name}`, 14, y);
   y += 6;
   doc.text(
-    `Medication: ${getMedicationLabel(profile.medication)} (${profile.currentDosage}${profile.dosageUnit})`,
+    `Medication: ${formatInjectionDosesSummary(getProfileInjectionDoses(profile))}`,
     14,
     y
   );
@@ -171,11 +174,10 @@ export async function generateMedicalSummary(data: AppData): Promise<void> {
     y += 4;
     autoTable(doc, {
       startY: y,
-      head: [["Date", "Medication", "Dosage", "Site"]],
+      head: [["Date", "Medications & doses", "Site"]],
       body: injections.slice(0, 8).map((i) => [
         formatDate(i.date),
-        getMedicationLabel(i.medication),
-        `${i.dosage} ${i.dosageUnit}`,
+        formatInjectionDosesSummary(getInjectionDoses(i)),
         i.site.replace(/-/g, " "),
       ]),
       theme: "striped",

@@ -6,7 +6,7 @@ import { ChevronRight, Settings } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useApp } from "@/hooks/useAppData";
 import { useAuth } from "@/hooks/useAuth";
-import { getMedicationLabel } from "@/lib/utils";
+import { formatInjectionDosesSummary, getProfileInjectionDoses } from "@/lib/utils";
 import { ui } from "@/lib/ui-classes";
 
 function getInitials(name: string, email?: string | null): string {
@@ -64,8 +64,7 @@ export function SidebarProfile({ embedded }: { embedded?: boolean }) {
             </p>
             {hasMedication ? (
               <p className="text-[11px] text-lavender-500 truncate mt-0.5">
-                {getMedicationLabel(profile.medication)} · {profile.currentDosage}
-                {profile.dosageUnit}
+                {formatInjectionDosesSummary(getProfileInjectionDoses(profile))}
               </p>
             ) : (
               <p className="text-[11px] text-gray-400 truncate mt-0.5">

@@ -16,10 +16,14 @@ import {
   setReminderSoundEnabled,
   unlockReminderAudio,
 } from "@/lib/reminder-sound";
-import { MEDICATIONS } from "@/lib/constants";
 import { DIETARY_EXCLUSION_OPTIONS } from "@/lib/dietary-preferences";
-import type { GLP1Medication } from "@/lib/types";
-import { defaultNextInjectionDate } from "@/lib/utils";
+import { InjectionMedicationDosesEditor } from "@/components/injections/InjectionMedicationDosesEditor";
+import type { InjectionMedicationDose } from "@/lib/types";
+import {
+  applyProfileInjectionDoses,
+  defaultNextInjectionDate,
+  getProfileInjectionDoses,
+} from "@/lib/utils";
 import { getDay, parseISO } from "date-fns";
 import { Bell, Trash2, Save, LogOut, Database } from "lucide-react";
 
@@ -29,10 +33,9 @@ export default function SettingsPage() {
   const { profile, reminders } = data;
 
   const [name, setName] = useState(profile?.name ?? "");
-  const [medication, setMedication] = useState<GLP1Medication>(
-    profile?.medication ?? "ozempic"
+  const [injectionDoses, setInjectionDoses] = useState<InjectionMedicationDose[]>(
+    profile ? getProfileInjectionDoses(profile) : []
   );
-  const [dosage, setDosage] = useState(String(profile?.currentDosage ?? 0.25));
   const [nextInjectionDate, setNextInjectionDate] = useState(
     profile?.nextInjectionDate ?? defaultNextInjectionDate()
   );
@@ -70,27 +73,27 @@ export default function SettingsPage() {
 
   if (!profile) return null;
 
-  const med = MEDICATIONS.find((m) => m.id === medication)!;
-
   const handleSave = async () => {
-    await setProfile({
-      ...profile,
-      name,
-      medication,
-      currentDosage: parseFloat(dosage),
-      dosageUnit: med.defaultUnit,
-      injectionDay: getDay(parseISO(nextInjectionDate)),
-      nextInjectionDate,
-      injectionTime,
-      calorieGoal: parseInt(calorieGoal),
-      proteinGoal: parseInt(proteinGoal),
-      fiberGoal: parseInt(fiberGoal),
-      waterGoal: parseInt(waterGoal),
-      goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
-      excludeShellfish,
-      excludePork,
-      excludeDuck,
-    });
+    await setProfile(
+      applyProfileInjectionDoses(
+        {
+          ...profile,
+          name,
+          injectionDay: getDay(parseISO(nextInjectionDate)),
+          nextInjectionDate,
+          injectionTime,
+          calorieGoal: parseInt(calorieGoal),
+          proteinGoal: parseInt(proteinGoal),
+          fiberGoal: parseInt(fiberGoal),
+          waterGoal: parseInt(waterGoal),
+          goalWeight: goalWeight ? parseFloat(goalWeight) : undefined,
+          excludeShellfish,
+          excludePork,
+          excludeDuck,
+        },
+        injectionDoses
+      )
+    );
     await setReminders({
       enabled: reminderEnabled,
       daysBefore: parseInt(reminderDays),
@@ -175,28 +178,15 @@ export default function SettingsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-            <Select
-              label="Medication"
-              value={medication}
-              onChange={(e) => {
-                setMedication(e.target.value as GLP1Medication);
-                const m = MEDICATIONS.find((med) => med.id === e.target.value)!;
-                setDosage(String(m.commonDosages[0]));
-              }}
-              options={MEDICATIONS.map((m) => ({
-                value: m.id,
-                label: m.brand,
-              }))}
+            <InjectionMedicationDosesEditor
+              doses={injectionDoses}
+              onChange={setInjectionDoses}
+              compact
             />
-            <Select
-              label="Current dosage"
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-              options={med.commonDosages.map((d) => ({
-                value: String(d),
-                label: `${d} ${med.defaultUnit}`,
-              }))}
-            />
+            <p className="text-xs text-gray-500 -mt-1">
+              The first medication sets your injection schedule and reminders.
+              Add more if your doctor combines medications in one shot.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Next injection date"

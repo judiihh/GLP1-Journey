@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { formatDate, getMedicationLabel, getSiteLabel } from "@/lib/utils";
+import {
+  formatDate,
+  formatInjectionDosesSummary,
+  getInjectionDoses,
+  getSiteLabel,
+} from "@/lib/utils";
 import { SEVERITY_LABELS } from "@/lib/constants";
 import type { InjectionLog, SideEffectLog } from "@/lib/types";
 import { SymptomLogForm, symptomSummaryTags } from "./SymptomLogForm";
@@ -56,8 +61,8 @@ export function InjectionSymptomItem({
             )}
           </div>
           <p className="text-xs text-gray-500 break-words leading-relaxed">
-            {getMedicationLabel(injection.medication)} · {injection.dosage}{" "}
-            {injection.dosageUnit} · {getSiteLabel(injection.site)}
+            {formatInjectionDosesSummary(getInjectionDoses(injection))} ·{" "}
+            {getSiteLabel(injection.site)}
           </p>
           {hasLog && !open && (
             <div className="flex flex-wrap gap-1.5 mt-2">

@@ -10,10 +10,11 @@ import { TrendChart } from "@/components/charts/Charts";
 import {
   formatDate,
   formatInjectionCountdown,
+  formatInjectionDosesSummary,
   formatTimeDisplay,
+  getProfileInjectionDoses,
   getDaysUntilInjection,
   getLastRelevantInjection,
-  getMedicationLabel,
   getNextInjectionLabel,
   getNutritionAverages,
   getTreatmentConsistency,
@@ -98,8 +99,7 @@ export default function DashboardPage() {
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-0.5">
-                {getMedicationLabel(profile.medication)} · {profile.currentDosage}
-                {profile.dosageUnit}
+                {formatInjectionDosesSummary(getProfileInjectionDoses(profile))}
               </p>
             </div>
           </div>

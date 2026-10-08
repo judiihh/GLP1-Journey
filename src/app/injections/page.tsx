@@ -7,16 +7,19 @@ import { useApp } from "@/hooks/useAppData";
 import { PageHeader } from "@/components/layout/Navigation";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input, Select, Textarea } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { BodyMap } from "@/components/charts/Charts";
 import { NextInjectionConfirm } from "@/components/injections/NextInjectionConfirm";
+import { InjectionMedicationDosesEditor } from "@/components/injections/InjectionMedicationDosesEditor";
 import {
-  formatDate,
+  buildInjectionLogFromDoses,
   formatInjectionCountdown,
+  formatInjectionDosesSummary,
   formatTimeDisplay,
   getDaysUntilInjection,
   getMedicationLabel,
   getNextInjectionLabel,
+  getProfileInjectionDoses,
   getSiteLabel,
   getSiteRotationStatus,
   getSuggestedNextInjectionDate,
@@ -25,8 +28,8 @@ import {
   todayISO,
   validateLogDate,
 } from "@/lib/utils";
-import { INJECTION_SITES, MEDICATIONS } from "@/lib/constants";
-import type { GLP1Medication, InjectionSite } from "@/lib/types";
+import { INJECTION_SITES } from "@/lib/constants";
+import type { InjectionMedicationDose, InjectionSite } from "@/lib/types";
 import { ui } from "@/lib/ui-classes";
 import { cn } from "@/lib/cn";
 import { Syringe, MapPin } from "lucide-react";
@@ -39,15 +42,14 @@ export default function InjectionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
-  const [medication, setMedication] = useState<GLP1Medication>(
-    profile?.medication ?? "ozempic"
+  const [medicationDoses, setMedicationDoses] = useState<InjectionMedicationDose[]>(
+    []
   );
-  const [dosage, setDosage] = useState(String(profile?.currentDosage ?? 0.25));
   const [site, setSite] = useState<InjectionSite>(
     suggestNextInjectionSite(injections)
   );
   const [notes, setNotes] = useState("");
-  const [dosageChanged, setDosageChanged] = useState(false);
+  const [updateProfileDoses, setUpdateProfileDoses] = useState(false);
   const [nextConfirm, setNextConfirm] = useState<{
     suggestedDate: string;
     suggestedTime: string;
@@ -57,7 +59,7 @@ export default function InjectionsPage() {
 
   if (!profile) return null;
 
-  const selectedMed = MEDICATIONS.find((m) => m.id === medication)!;
+  const profileDoses = getProfileInjectionDoses(profile);
   const suggestedSite = suggestNextInjectionSite(injections);
   const siteStatus = getSiteRotationStatus(injections);
   const daysUntil = getDaysUntilInjection(profile, injections);
@@ -65,11 +67,13 @@ export default function InjectionsPage() {
   const doseComplete = hasCompletedScheduledInjection(profile, injections);
 
   const openForm = () => {
-    setMedication(profile.medication);
-    setDosage(String(profile.currentDosage));
+    setMedicationDoses(
+      profileDoses.map((d) => ({ ...d }))
+    );
     setSite(suggestedSite);
     setDate(todayISO());
     setTime(profile.injectionTime || new Date().toTimeString().slice(0, 5));
+    setUpdateProfileDoses(false);
     setNextConfirm(null);
     setShowForm(true);
   };
@@ -84,39 +88,28 @@ export default function InjectionsPage() {
     setNextConfirm(null);
   };
 
-  const handleMedicationChange = (id: GLP1Medication) => {
-    setMedication(id);
-    const med = MEDICATIONS.find((m) => m.id === id)!;
-    setDosage(String(med.commonDosages[0]));
-    setDosageChanged(false);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateLogDate(date)) return;
-    const newDosage = parseFloat(dosage);
-    const isCurrentProfileMed = medication === profile.medication;
-    const changed =
-      isCurrentProfileMed && newDosage !== profile.currentDosage;
 
-    await logInjection({
-      id: uuidv4(),
-      date,
-      time,
-      medication,
-      dosage: newDosage,
-      dosageUnit: selectedMed.defaultUnit,
-      site,
-      notes: notes || undefined,
-      dosageChanged: (changed || dosageChanged) && isCurrentProfileMed,
-      previousDosage:
-        changed && isCurrentProfileMed ? profile.currentDosage : undefined,
-    });
+    await logInjection(
+      buildInjectionLogFromDoses(
+        {
+          id: uuidv4(),
+          date,
+          time,
+          site,
+          notes: notes || undefined,
+          dosageChanged: updateProfileDoses,
+        },
+        medicationDoses
+      )
+    );
 
     const suggestedDate = getSuggestedNextInjectionDate(
       profile,
       date,
-      medication
+      profile.medication
     );
 
     setNextConfirm({
@@ -125,7 +118,7 @@ export default function InjectionsPage() {
     });
     setShowForm(false);
     setNotes("");
-    setDosageChanged(false);
+    setUpdateProfileDoses(false);
   };
 
   return (
@@ -175,12 +168,12 @@ export default function InjectionsPage() {
           )}
         </Card>
         <Card>
-          <p className="text-xs text-gray-500">Profile medication</p>
-          <p className="font-display text-lg font-bold text-gray-800 mt-1">
-            {getMedicationLabel(profile.medication)}
+          <p className="text-xs text-gray-500">Default injection</p>
+          <p className="font-display text-sm font-bold text-gray-800 mt-1 leading-snug">
+            {formatInjectionDosesSummary(profileDoses)}
           </p>
           <p className="text-xs text-lavender-500 mt-0.5">
-            {profile.currentDosage} {profile.dosageUnit} · default for new logs
+            Used when you log a new injection
           </p>
         </Card>
         <Card>
@@ -204,117 +197,77 @@ export default function InjectionsPage() {
           <Card>
             <CardHeader
               title="Log new injection"
-              subtitle="Medication defaults to your profile — change it for past or switched doses"
+              subtitle="Add each medication and dose in this injection"
             />
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Medication used
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
-                    {MEDICATIONS.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handleMedicationChange(m.id)}
-                        className={cn(
-                          "p-2.5 rounded-xl border-2 text-left transition-all text-sm",
-                          medication === m.id
-                            ? ui.selectableActive
-                            : ui.selectableIdle
-                        )}
-                      >
-                        <p className="font-semibold text-gray-800 leading-tight">
-                          {m.brand}
-                        </p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">
-                          {m.frequency}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                  {medication !== profile.medication && (
-                    <p className="text-xs text-lavender-600 mt-2 bg-lavender-50/80 px-3 py-2 rounded-lg">
-                      Logging as {selectedMed.brand} — your profile default remains{" "}
-                      {getMedicationLabel(profile.medication)}.
-                    </p>
-                  )}
-                </div>
+              <InjectionMedicationDosesEditor
+                doses={medicationDoses}
+                onChange={setMedicationDoses}
+              />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Date"
-                    type="date"
-                    value={date}
-                    max={today}
-                    error={dateError ?? undefined}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="Time"
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    required
-                  />
-                </div>
-                <Select
-                  label="Dosage"
-                  value={dosage}
-                  onChange={(e) => setDosage(e.target.value)}
-                  options={selectedMed.commonDosages.map((d) => ({
-                    value: String(d),
-                    label: `${d} ${selectedMed.defaultUnit}`,
-                  }))}
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Date"
+                  type="date"
+                  value={date}
+                  max={today}
+                  error={dateError ?? undefined}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
                 />
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Injection site
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {INJECTION_SITES.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setSite(s.id)}
-                        className={cn(
-                          "p-2.5 rounded-xl border-2 text-sm transition-all",
-                          site === s.id
-                            ? ui.selectableActive
-                            : s.id === suggestedSite
-                              ? "border-turquoise-200 bg-turquoise-50"
-                              : ui.selectableIdle
-                        )}
-                      >
-                        <MapPin className="w-3 h-3 inline mr-1" />
-                        {s.shortLabel}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {medication === profile.medication && (
-                  <label className="flex items-center gap-2 text-sm text-gray-600">
-                    <input
-                      type="checkbox"
-                      checked={dosageChanged}
-                      onChange={(e) => setDosageChanged(e.target.checked)}
-                      className="rounded border-lavender-300"
-                    />
-                    Mark as dosage change on profile
-                  </label>
-                )}
-                <Textarea
-                  label="Notes (optional)"
-                  rows={2}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="How are you feeling?"
+                <Input
+                  label="Time"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  required
                 />
-                <Button type="submit" className="w-full">
-                  Save injection
-                </Button>
-              </form>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Injection site
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {INJECTION_SITES.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setSite(s.id)}
+                      className={cn(
+                        "p-2.5 rounded-xl border-2 text-sm transition-all",
+                        site === s.id
+                          ? ui.selectableActive
+                          : s.id === suggestedSite
+                            ? "border-turquoise-200 bg-turquoise-50"
+                            : ui.selectableIdle
+                      )}
+                    >
+                      <MapPin className="w-3 h-3 inline mr-1" />
+                      {s.shortLabel}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={updateProfileDoses}
+                  onChange={(e) => setUpdateProfileDoses(e.target.checked)}
+                  className="rounded border-lavender-300"
+                />
+                Save these doses as my default for future injections
+              </label>
+              <Textarea
+                label="Notes (optional)"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="How are you feeling?"
+              />
+              <Button type="submit" className="w-full">
+                Save injection
+              </Button>
+            </form>
           </Card>
         ) : (
           <Card>
@@ -326,7 +279,7 @@ export default function InjectionsPage() {
               <Syringe className="w-8 h-8 mx-auto text-lavender-400 mb-2" />
               <p className="font-medium text-gray-700">{`Log today's injection`}</p>
               <p className="text-sm text-gray-500 mt-1">
-                Default: {getMedicationLabel(profile.medication)} ·{" "}
+                Default: {formatInjectionDosesSummary(profileDoses)} ·{" "}
                 {getSiteLabel(suggestedSite)}
               </p>
             </button>

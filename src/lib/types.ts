@@ -32,12 +32,20 @@ export type SideEffectType =
 
 export type Severity = 0 | 1 | 2 | 3 | 4;
 
+export interface InjectionMedicationDose {
+  medication: GLP1Medication;
+  dosage: number;
+  dosageUnit: "mg" | "units";
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   medication: GLP1Medication;
   currentDosage: number;
   dosageUnit: "mg" | "units";
+  /** Default medications and doses for each injection (e.g. combo in one syringe). */
+  injectionMedicationDoses?: InjectionMedicationDose[];
   injectionDay: number; // 0-6, derived from nextInjectionDate (legacy compat)
   nextInjectionDate?: string; // ISO date — next scheduled injection
   injectionTime: string; // HH:mm
@@ -63,6 +71,8 @@ export interface InjectionLog {
   medication: GLP1Medication;
   dosage: number;
   dosageUnit: "mg" | "units";
+  /** All medications in this injection when more than one is combined. */
+  medicationDoses?: InjectionMedicationDose[];
   site: InjectionSite;
   notes?: string;
   dosageChanged?: boolean;
